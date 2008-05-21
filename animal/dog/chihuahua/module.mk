@@ -1,6 +1,6 @@
 MOD_NAME := chihuahua
 MOD_OBJS := chihuahua.o
-MOD_CXXFLAGS := -march=pentium3 -DUMB_DEFINE
+MOD_CXXFLAGS := -march=pentium3 -DTACO_BELL
 MOD_INCDIRS := animal animal/dog
 
 SUBMODULES :=
