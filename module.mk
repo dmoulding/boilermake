@@ -1,5 +1,5 @@
 # The main makefile fragment MUST define the final executable name.
-OUT := ../animals.exe
+OUT = animals.exe
 
 # The main makefile fragment MAY define a top-level output directory. If an
 # output directory is specified, it MUST be terminated with a slash (/).
@@ -18,7 +18,7 @@ MOD_INCDIRS := !all
 
 SUBMODULES := animal
 
-# The main makefile fragment MUST define .DEFAULT_GOAL as ${OUTDIR}${OUT}
-.DEFAULT_GOAL := ${OUTDIR}${OUT}
+# The main makefile fragment MUST define .DEFAULT_GOAL as ${OUT}
+.DEFAULT_GOAL := ${OUT}
 
 include addmodule.mk

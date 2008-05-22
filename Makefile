@@ -22,14 +22,14 @@ P_INCLUDES :=
 # all sub-module makefile fragments.
 include module.mk
 
-# Make sure the final executable goes into the top-level output directory if
-# one was specified.
-OUT := $(patsubst %,${OUTDIR}%,${OUT})
-
 # Generate the link options for any libraries.
 LDLIBS := $(patsubst lib%.a,-l%,$(patsubst ${OUTDIR}%,%,${LIBS}))
 ifneq "$(strip ${LDLIBS})" ""
-    LDFLAGS += $(patsubst %,-L%,${OUTDIR})
+    LIBDIR := ${OUTDIR}
+    ifeq "$(strip ${LIBDIR})" ""
+        LIBDIR := ./
+    endif
+    LDFLAGS += $(patsubst %,-L%,${LIBDIR})
 endif
 
 # Rule to build the final executable.

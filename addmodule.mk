@@ -82,7 +82,6 @@ ifneq "$(strip ${LIB_LEVELS})" ""
         # after their values have been cleared.
         define libtarget
         ${OUTDIR}${MOD_LIB}: ${MOD_LIB_OBJS}
-		@mkdir -p ${OUTDIR}
 		@ar r ${OUTDIR}${MOD_LIB} ${MOD_LIB_OBJS}
         endef
         $(eval $(call libtarget))
