@@ -22,6 +22,9 @@ P_INCLUDES :=
 # all sub-module makefile fragments.
 include module.mk
 
+# The final executable is the default goal.
+.DEFAULT_GOAL := ${OUT}
+
 # Generate the link options for any libraries.
 LDLIBS := $(patsubst lib%.a,-l%,$(patsubst ${OUTDIR}%,%,${LIBS}))
 ifneq "$(strip ${LDLIBS})" ""
