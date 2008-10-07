@@ -1,0 +1,1 @@
+OBJS := cat.o
