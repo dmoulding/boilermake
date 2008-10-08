@@ -4,6 +4,7 @@ TGT_STACK :=
 TGTS :=
 TOP_MK := top.mk
 
+# XXX need to distinguish between C/C++ projects for linking.
 define target
 ifeq "$$(strip $$(patsubst %.a,%,${1}))" "${1}"
 ${1}: $${${1}_OBJS} $${${1}_LIBS}
@@ -18,43 +19,45 @@ endif
 endef
 
 define include_module
-DIR := $$(patsubst ./%,%,$$(dir ${1}))
+DIR := $(patsubst ./%,%,$(dir ${1}))
 DIR_STACK := $$(call push,$${DIR_STACK},$${DIR})
 LIBS :=
 MOD_INCDIRS :=
 MOD_CFLAGS :=
 MOD_CXXFLAGS :=
-MODULE := ${1}
 OBJS :=
 SUBMODULES :=
 TARGET :=
 include ${1}
+ifndef BUILD_DIR
+    BUILD_DIR := build/
+endif
+ifeq "$$(strip $${TARGET_DIR})" ""
+    TARGET_DIR := ./
+endif
+OUT_DIR := $${BUILD_DIR}$${DIR}
 include addmodule.mk
 DIR_STACK := $$(call pop,$${DIR_STACK})
 DIR := $$(call peek,$${DIR_STACK})
-
 endef
 
 define peek
 $(lastword $(subst :, ,${1}))
-
 endef
 
 define pop
 $(patsubst %:$(lastword $(subst :, ,${1})),%,${1})
-
 endef
 
 define push
 $(patsubst %,${1}:%,${2})
-
 endef
 
 $(eval $(call include_module,${TOP_MK}))
 
 INCDIRS := $(patsubst %,-I%,${INCDIRS})
 
-$(eval $(foreach TGT,${TGTS},$(call target,${TGT})))
+$(foreach TGT,${TGTS},$(eval $(call target,${TGT})))
 
 .DEFAULT_GOAL = all
 .PHONY: all

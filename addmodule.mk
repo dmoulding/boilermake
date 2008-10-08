@@ -1,13 +1,3 @@
-ifndef BUILD_DIR
-    BUILD_DIR := build/
-endif
-
-ifeq "$(strip ${TARGET_DIR})" ""
-    TARGET_DIR := ./
-endif
-
-OUT_DIR := ${BUILD_DIR}${DIR}
-
 ifneq "$(strip ${TARGET})" ""
     TGT := $(strip ${TARGET_DIR}${TARGET})
     TGTS += ${TGT}
@@ -37,7 +27,7 @@ ifneq "$(strip ${LIBS})" ""
 endif
 
 ifneq "$(strip ${SUBMODULES})" ""
-    $(eval $(foreach SUB,${SUBMODULES},$(call include_module,${DIR}${SUB})))
+    $(foreach SUB,${SUBMODULES},$(eval $(call include_module,${DIR}${SUB})))
 endif
 
 TGT_STACK := $(call pop,${TGT_STACK})
