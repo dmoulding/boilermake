@@ -1,6 +1,6 @@
 TARGET := talk
 
-OBJS := main.o
+OBJS := talk.o
 
 LIBS := libanimals.a
 

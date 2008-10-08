@@ -1,13 +1,13 @@
 ifneq "$(strip ${TARGET})" ""
     TGT := $(strip ${TARGET_DIR}${TARGET})
-    TGTS += ${TGT}
+    ALL_TGTS += ${TGT}
     ${TGT}_OBJS :=
     ${TGT}_LIBS :=
     ${TGT}: TGT_LDLIBS :=
 else
-    TGT := $(strip $(call peek,${TGT_STACK}))
+    TGT := $(strip $(call PEEK,${TGT_STACK}))
 endif
-TGT_STACK := $(call push,${TGT_STACK},${TGT})
+TGT_STACK := $(call PUSH,${TGT_STACK},${TGT})
 
 ifneq "$(strip ${OBJS})" ""
     OBJS := $(patsubst %,${OUT_DIR}%,${OBJS})
@@ -16,8 +16,6 @@ ifneq "$(strip ${OBJS})" ""
     ${OBJS}: TGT_CFLAGS := ${MOD_CFLAGS}
     ${OBJS}: TGT_CXXFLAGS := ${MOD_CXXFLAGS}
     ${OBJS}: TGT_INCS := $(patsubst %,-I%,${MOD_INCDIRS})
-
-    DEPS += $(patsubst %.o,%.P,${OBJS})
 endif
 
 ifneq "$(strip ${LIBS})" ""
@@ -27,8 +25,8 @@ ifneq "$(strip ${LIBS})" ""
 endif
 
 ifneq "$(strip ${SUBMODULES})" ""
-    $(foreach SUB,${SUBMODULES},$(eval $(call include_module,${DIR}${SUB})))
+    $(foreach SUB,${SUBMODULES},$(eval $(call INCLUDE_MODULE,${DIR}${SUB})))
 endif
 
-TGT_STACK := $(call pop,${TGT_STACK})
-TGT := $(call peek,${TGT_STACK})
+TGT_STACK := $(call POP,${TGT_STACK})
+TGT := $(call PEEK,${TGT_STACK})
