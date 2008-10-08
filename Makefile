@@ -17,17 +17,18 @@ MAKEFILE_INCLUDED := DEFINED
 #   the traditional ".a" extension.
 # XXX need to distinguish between C/C++ projects for linking.
 define ADD_TARGET
-ifeq "$$(strip $$(patsubst %.a,%,${1}))" "${1}"
-    # Create a new target for linking an executable.
-    ${1}: $${${1}_OBJS} $${${1}_LIBS}
+    ifeq "$$(strip $$(patsubst %.a,%,${1}))" "${1}"
+        # Create a new target for linking an executable.
+        ${1}: $${${1}_OBJS} $${${1}_LIBS}
 	    @mkdir -p $$(dir $$@)
-	    $${CXX} -o ${1} $${TGT_LDFLAGS} $${LDFLAGS} $${${1}_OBJS} $${TGT_LDLIBS}
-else
-    # Create a new target for creating a library archive.
-    ${1}: $${${1}_OBJS}
+	    $${CXX} -o ${1} $${TGT_LDFLAGS} $${LDFLAGS} $${${1}_OBJS} \
+	        $${TGT_LDLIBS}
+    else
+        # Create a new target for creating a library archive.
+        ${1}: $${${1}_OBJS}
 	    @mkdir -p $$(dir $$@)
 	    $${AR} r ${1} $${${1}_OBJS}
-endif
+    endif
 endef
 
 # COMPILE_C_CMDS - Commands for compiling C source code.
