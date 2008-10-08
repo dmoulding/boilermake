@@ -19,8 +19,6 @@ endif
 endef
 
 define include_module
-DIR := $(patsubst ./%,%,$(dir ${1}))
-DIR_STACK := $$(call push,$${DIR_STACK},$${DIR})
 LIBS :=
 MOD_INCDIRS :=
 MOD_CFLAGS :=
@@ -29,16 +27,21 @@ OBJS :=
 SUBMODULES :=
 TARGET :=
 include ${1}
+
 ifndef BUILD_DIR
     BUILD_DIR := build/
 endif
 ifeq "$$(strip $${TARGET_DIR})" ""
     TARGET_DIR := ./
 endif
+
+DIR := $(patsubst ./%,%,$(dir ${1}))
+DIR_STACK := $$(call push,$${DIR_STACK},$${DIR})
 OUT_DIR := $${BUILD_DIR}$${DIR}
 include addmodule.mk
 DIR_STACK := $$(call pop,$${DIR_STACK})
 DIR := $$(call peek,$${DIR_STACK})
+OUT_DIR := $${BUILD_DIR}$${DIR}
 endef
 
 define peek
