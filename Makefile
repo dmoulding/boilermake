@@ -2,6 +2,12 @@
 #   The target may be an executable or a library. The two allowable types of
 #   targets are distinguished based on the name: library targets must end with
 #   the traditional ".a" extension.
+#
+#   Note: This function is only useful in conjuction with eval, since the
+#         function results in a block of Makefile syntax that must be
+#         evaluated. Because it must be used with eval, most instances of "$"
+#         need to be escaped with a second "$" to accomodate the double
+#         expansion that occurs when eval is invoked.
 # XXX need to distinguish between C/C++ projects for linking.
 define ADD_TARGET
     ifeq "$$(strip $$(patsubst %.a,%,${1}))" "${1}"
@@ -43,11 +49,13 @@ endef
 
 # INCLUDE_MODULE - Parameterized "function" that includes a new module into the
 #   makefile. It also recursively includes all submodules of the specified
-#   module. It is important to note that this function is only useful in
-#   conjuction with eval, since the function results in a block of Makefile
-#   syntax that must be evaluated. Because it must be used with eval, most
-#   instances of "$" need to be escaped with a second "$" to accomodate the
-#   double-expansion that occurs when eval is invoked.
+#   module.
+#
+#   Note: This function is only useful in conjuction with eval, since the
+#         function results in a block of Makefile syntax that must be
+#         evaluated. Because it must be used with eval, most instances of "$"
+#         need to be escaped with a second "$" to accomodate the double
+#         expansion that occurs when eval is invoked.
 define INCLUDE_MODULE
     # Initialize module-specific variables, then include the module's file.
     LIBS :=
