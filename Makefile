@@ -27,7 +27,8 @@ endef
 # COMPILE_C_CMDS - Commands for compiling C source code.
 define COMPILE_C_CMDS
 	@mkdir -p $(dir $@)
-	${CC} -o $@ -c -MD ${TGT_CFLAGS} ${CFLAGS} ${INCDIRS} ${TGT_INCS} $<
+	${CC} -o $@ -c -MD ${TGT_CFLAGS} ${CFLAGS} ${INCDIRS} ${TGT_INCS} \
+	    ${DEFS} ${TGT_DEFS} $<
 	@cp ${BUILD_DIR}$*.d ${BUILD_DIR}$*.P; \
 	 sed -e 's/#.*//' -e 's/^[^:]*: *//' -e 's/ *\\$$//' \
 	     -e '/^$$/ d' -e 's/$$/ :/' < ${BUILD_DIR}$*.d \
@@ -39,7 +40,7 @@ endef
 define COMPILE_CXX_CMDS
 	@mkdir -p $(dir $@)
 	${CXX} -o $@ -c -MD ${TGT_CXXFLAGS} ${CXXFLAGS} ${INCDIRS} \
-	    ${TGT_INCS} $<
+	    ${TGT_INCS} ${DEFS} ${TGT_DEFS} $<
 	@cp ${BUILD_DIR}$*.d ${BUILD_DIR}$*.P; \
 	 sed -e 's/#.*//' -e 's/^[^:]*: *//' -e 's/ *\\$$//' \
 	     -e '/^$$/ d' -e 's/$$/ :/' < ${BUILD_DIR}$*.d \
@@ -59,9 +60,10 @@ endef
 define INCLUDE_MODULE
     # Initialize module-specific variables, then include the module's file.
     LIBS :=
-    MOD_INCDIRS :=
     MOD_CFLAGS :=
     MOD_CXXFLAGS :=
+    MOD_DEFS :=
+    MOD_INCDIRS :=
     OBJS :=
     SUBMODULES :=
     TARGET :=
@@ -113,6 +115,7 @@ define INCLUDE_MODULE
         $${TGT}_OBJS += $${OBJS}
         $${OBJS}: TGT_CFLAGS := $${MOD_CFLAGS}
         $${OBJS}: TGT_CXXFLAGS := $${MOD_CXXFLAGS}
+        $${OBJS}: TGT_DEFS := $$(patsubst %,-D%,$${MOD_DEFS})
         $${OBJS}: TGT_INCS := $$(patsubst %,-I%,$${MOD_INCDIRS})
     endif
 
@@ -170,6 +173,7 @@ endef
 ALL_DEPS :=
 ALL_OBJS :=
 ALL_TGTS :=
+DEFS :=
 DIR_STACK :=
 INCDIRS :=
 TGT_STACK :=
@@ -180,6 +184,7 @@ $(eval $(call INCLUDE_MODULE,main.mk))
 
 # Perform post-processing on global variables as needed.
 ALL_DEPS := $(patsubst %.o,%.P,${ALL_OBJS})
+DEFS := $(patsubst %,-D%,${DEFS})
 INCDIRS := $(patsubst %,-I%,${INCDIRS})
 
 # Define "all", which simply builds all user-defined targets, as default goal.
