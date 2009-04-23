@@ -12,7 +12,7 @@
 define ADD_TARGET
     ifeq "$$(strip $$(patsubst %.a,%,${1}))" "${1}"
         # Create a new target for linking an executable.
-        ${1}: $${${1}_OBJS} $${${1}_LIBS}
+        ${1}: $${${1}_OBJS} $${${1}_PRELIBS}
 	    @mkdir -p $$(dir $$@)
 	    $${CXX} -o ${1} $${TGT_LDFLAGS} $${LDFLAGS} $${${1}_OBJS} \
 	        $${TGT_LDLIBS}
@@ -65,6 +65,7 @@ define INCLUDE_MODULE
     MOD_DEFS :=
     MOD_INCDIRS :=
     OBJS :=
+    PRELIBS :=
     SUBMODULES :=
     TARGET :=
     include ${1}
@@ -93,8 +94,9 @@ define INCLUDE_MODULE
         # apply to this new target.
         TGT := $$(strip $${TARGET_DIR}$${TARGET})
         ALL_TGTS += $${TGT}
-        $${TGT}_OBJS :=
         $${TGT}_LIBS :=
+        $${TGT}_OBJS :=
+        $${TGT}_PRELIBS :=
         $${TGT}: TGT_LDLIBS :=
     else
         # The values defined by this module apply to the the "current" target
@@ -120,12 +122,20 @@ define INCLUDE_MODULE
     endif
 
     ifneq "$$(strip $${LIBS})" ""
-        # This module is dependent on one or more libraries. Add the libraries
-        # to the current target's library list and add target-specific
-        # variables for setting the required linker directives.
-        $${TGT}_LIBS += $${TARGET_DIR}$${LIBS}
-        $${TGT}: TGT_LDFLAGS := $$(patsubst %,-L%,$${TARGET_DIR})
+        # This module wants to link the target with one or more outside
+        # libraries. Add a target-specific variable for setting the required
+        # linker directive(s).
         $${TGT}: TGT_LDLIBS += $$(patsubst lib%.a,-l%,$${LIBS})
+    endif
+
+    ifneq "$$(strip $${PRELIBS})" ""
+        # This module declares a dependency upon one ore more (local) libraries
+        # for the current target. Add the libraries to the target's prerequesite
+        # library list and add target-specific variables for setting the
+        # required linker directives.
+        $${TGT}_PRELIBS += $${TARGET_DIR}$${PRELIBS}
+        $${TGT}: TGT_LDFLAGS := $$(patsubst %,-L%,$${TARGET_DIR})
+        $${TGT}: TGT_LDLIBS += $$(patsubst lib%.a,-l%,$${PRELIBS})
     endif
 
     ifneq "$$(strip $${SUBMODULES})" ""

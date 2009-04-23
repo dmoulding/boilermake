@@ -2,7 +2,7 @@ TARGET := talk
 
 OBJS := talk.o
 
-LIBS := libanimals.a
+PRELIBS := libanimals.a
 
 MOD_INCDIRS := \
     animals/cat \
