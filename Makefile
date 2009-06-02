@@ -8,13 +8,12 @@
 #         evaluated. Because it must be used with eval, most instances of "$"
 #         need to be escaped with a second "$" to accomodate the double
 #         expansion that occurs when eval is invoked.
-# XXX need to distinguish between C/C++ projects for linking.
 define ADD_TARGET
     ifeq "$$(strip $$(patsubst %.a,%,${1}))" "${1}"
         # Create a new target for linking an executable.
         ${1}: $${${1}_OBJS} $${${1}_PRELIBS}
 	    @mkdir -p $$(dir $$@)
-	    $${CXX} -o ${1} $${TGT_LDFLAGS} $${LDFLAGS} $${${1}_OBJS} \
+	    $${LNK} -o ${1} $${TGT_LDFLAGS} $${LDFLAGS} $${${1}_OBJS} \
 	        $${TGT_LDLIBS}
     else
         # Create a new target for creating a library archive.
@@ -66,6 +65,7 @@ define INCLUDE_MODULE
     MOD_INCDIRS :=
     OBJS :=
     PRELIBS :=
+    SRCS :=
     SUBMODULES :=
     TARGET :=
     include ${1}
@@ -94,7 +94,6 @@ define INCLUDE_MODULE
         # apply to this new target.
         TGT := $$(strip $${TARGET_DIR}$${TARGET})
         ALL_TGTS += $${TGT}
-        $${TGT}_LIBS :=
         $${TGT}_OBJS :=
         $${TGT}_PRELIBS :=
         $${TGT}: TGT_LDLIBS :=
@@ -107,11 +106,23 @@ define INCLUDE_MODULE
     # Push the current target onto the target stack.
     TGT_STACK := $$(call PUSH,$${TGT_STACK},$${TGT})
 
-    ifneq "$$(strip $${OBJS})" ""
-        # This module builds one or more objects. Add the objects to the
-        # current target's list of objects, and create target-specific
-        # variables for the objects based on any module-specific flags that
-        # were defined.
+    ifneq "$$(strip $${SRCS})" ""
+        # This module builds one or more objects from source. Validate the
+        # specified sources against the supported source file types.
+        BAD_SRCS := $$(strip $$(filter-out $${ALL_SRC_EXTS}, $${SRCS}))
+        ifneq "$${BAD_SRCS}" ""
+            $$(error Unsupported source file(s) in module ${1} [$${BAD_SRCS}])
+        endif
+        ALL_SRCS += $${SRCS}
+
+        # Convert the source file names to their corresponding object file
+        # names.
+        OBJS := $${SRCS}
+        $$(foreach EXT,$${ALL_SRC_EXTS},$$(eval OBJS := $${OBJS:$${EXT}=%.o}))
+
+        # Add the objects to the current target's list of objects, and create
+        # target-specific variables for the objects based on any module-specific
+        # flags that were defined.
         OBJS := $$(patsubst %,$${OUT_DIR}%,$${OBJS})
         ALL_OBJS += $${OBJS}
         $${TGT}_OBJS += $${OBJS}
@@ -179,13 +190,20 @@ endef
 #
 ###############################################################################
 
+# Define the source file extensions that we know how to handle.
+C_SRC_EXTS := %.c
+CXX_SRC_EXTS := %.C %.cc %.cp %.cpp %.CPP %.cxx %.c++
+ALL_SRC_EXTS := ${C_SRC_EXTS} ${CXX_SRC_EXTS}
+
 # Initialize global variables.
 ALL_DEPS :=
 ALL_OBJS :=
+ALL_SRCS :=
 ALL_TGTS :=
 DEFS :=
 DIR_STACK :=
 INCDIRS :=
+LNK :=
 TGT_STACK :=
 
 # Include the main user-supplied module. This also recursively includes all
@@ -196,6 +214,16 @@ $(eval $(call INCLUDE_MODULE,main.mk))
 ALL_DEPS := $(patsubst %.o,%.P,${ALL_OBJS})
 DEFS := $(patsubst %,-D%,${DEFS})
 INCDIRS := $(patsubst %,-I%,${INCDIRS})
+
+ifeq "$(strip ${LNK})" ""
+    # Determine whether to use the C or C++ compiler as the front-end to the
+    # linker. If there are any C++ sources, use the C++ compiler.
+    ifneq "$(strip $(filter ${CXX_SRC_EXTS},${ALL_SRCS}))" ""
+        LNK := ${CXX}
+    else
+        LNK := ${CC}
+    endif
+endif
 
 # Define "all", which simply builds all user-defined targets, as default goal.
 .PHONY: all
@@ -229,9 +257,17 @@ ${BUILD_DIR}%.o: %.C
 ${BUILD_DIR}%.o: %.cc
 	${COMPILE_CXX_CMDS}
 
+${BUILD_DIR}%.o: %.cp
+	${COMPILE_CXX_CMDS}
+
 ${BUILD_DIR}%.o: %.cpp
+	${COMPILE_CXX_CMDS}
+
+${BUILD_DIR}%.0: %.CPP
 	${COMPILE_CXX_CMDS}
 
 ${BUILD_DIR}%.o: %.cxx
 	${COMPILE_CXX_CMDS}
 
+${BUILD_DIR}%.o: %.c++
+	${COMPILE_CXX_CMDS}

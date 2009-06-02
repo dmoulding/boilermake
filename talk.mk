@@ -1,6 +1,6 @@
 TARGET := talk
 
-OBJS := talk.o
+SRCS := talk.cc
 
 PRELIBS := libanimals.a
 

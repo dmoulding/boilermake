@@ -1,1 +1,1 @@
-OBJS := mouse.o
+SRCS := mouse.cc

@@ -1,1 +1,1 @@
-OBJS := cat.o
+SRCS := cat.cc

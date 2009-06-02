@@ -1,4 +1,4 @@
-OBJS := chihuahua.o
+SRCS := chihuahua.cc
 
 MOD_DEFS := TACO_BELL
 

@@ -1,6 +1,6 @@
 TARGET := libanimals.a
 
-OBJS := animal.o
+SRCS := animal.cc
 
 SUBMODULES := \
     cat/cat.mk \
