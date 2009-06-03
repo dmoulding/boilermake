@@ -1,13 +1,31 @@
+# Note: Parameterized "functions" in this makefile that are marked with
+#       "USE WITH EVAL" are only useful in conjuction with eval. This is because
+#       those functions result in a block of Makefile syntax that must be
+#       evaluated after expansion.
+#
+#       Since they must be used with eval, most instances of "$" within them
+#       need to be escaped with a second "$" to accomodate the double expansion
+#       that occurs when eval is invoked. Consequently, attempting to call these
+#       "functions" without also using eval will not yield the expected result.
+
+# ADD_OBJECT_RULE - Parameterized "function" that adds a pattern rule, using
+#   the commands from the second argument, for building object files from source
+#   files with the filename extension specified in the first argument.
+#
+#   USE WITH EVAL
+#
+define ADD_OBJECT_RULE
+$${BUILD_DIR}%.o: ${1}
+	${2}
+endef
+
 # ADD_TARGET - Parameterized "function" that adds a new target to the Makefile.
 #   The target may be an executable or a library. The two allowable types of
 #   targets are distinguished based on the name: library targets must end with
 #   the traditional ".a" extension.
 #
-#   Note: This function is only useful in conjuction with eval, since the
-#         function results in a block of Makefile syntax that must be
-#         evaluated. Because it must be used with eval, most instances of "$"
-#         need to be escaped with a second "$" to accomodate the double
-#         expansion that occurs when eval is invoked.
+#   USE WITH EVAL
+#
 define ADD_TARGET
     ifeq "$$(strip $$(patsubst %.a,%,${1}))" "${1}"
         # Create a new target for linking an executable.
@@ -51,11 +69,8 @@ endef
 #   makefile. It also recursively includes all submodules of the specified
 #   module.
 #
-#   Note: This function is only useful in conjuction with eval, since the
-#         function results in a block of Makefile syntax that must be
-#         evaluated. Because it must be used with eval, most instances of "$"
-#         need to be escaped with a second "$" to accomodate the double
-#         expansion that occurs when eval is invoked.
+#   USE WITH EVAL
+#
 define INCLUDE_MODULE
     # Initialize module-specific variables, then include the module's file.
     LIBS :=
@@ -232,42 +247,18 @@ all: ${ALL_TGTS}
 # Add a new target rule for each user-defined target.
 $(foreach TGT,${ALL_TGTS},$(eval $(call ADD_TARGET,${TGT})))
 
+# Add pattern rule(s) for creating compiled object code from C source.
+$(foreach EXT,${C_SRC_EXTS},\
+  $(eval $(call ADD_OBJECT_RULE,${EXT},$${COMPILE_C_CMDS})))
+
+# Add pattern rule(s) for creating compiled object code from C++ source.
+$(foreach EXT,${CXX_SRC_EXTS},\
+  $(eval $(call ADD_OBJECT_RULE,${EXT},$${COMPILE_CXX_CMDS})))
+
+# Include generated rules that define additional (header) dependencies.
+-include ${ALL_DEPS}
+
 # Define "clean" target to remove all build-generated files.
 .PHONY: clean
 clean:
 	rm -f ${ALL_TGTS} ${ALL_OBJS} ${ALL_DEPS}
-
-# Include generated rules that define additional dependencies.
--include ${ALL_DEPS}
-
-###############################################################################
-#
-# Pattern Rules
-#
-###############################################################################
-
-# Pattern rule for creating compiled object code from C source.
-${BUILD_DIR}%.o: %.c
-	${COMPILE_C_CMDS}
-
-# Pattern rules for creating compiled object code from C++ source.
-${BUILD_DIR}%.o: %.C
-	${COMPILE_CXX_CMDS}
-
-${BUILD_DIR}%.o: %.cc
-	${COMPILE_CXX_CMDS}
-
-${BUILD_DIR}%.o: %.cp
-	${COMPILE_CXX_CMDS}
-
-${BUILD_DIR}%.o: %.cpp
-	${COMPILE_CXX_CMDS}
-
-${BUILD_DIR}%.0: %.CPP
-	${COMPILE_CXX_CMDS}
-
-${BUILD_DIR}%.o: %.cxx
-	${COMPILE_CXX_CMDS}
-
-${BUILD_DIR}%.o: %.c++
-	${COMPILE_CXX_CMDS}
