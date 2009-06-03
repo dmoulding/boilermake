@@ -6,7 +6,8 @@
 #       Since they must be used with eval, most instances of "$" within them
 #       need to be escaped with a second "$" to accomodate the double expansion
 #       that occurs when eval is invoked. Consequently, attempting to call these
-#       "functions" without also using eval will not yield the expected result.
+#       "functions" without also using eval will probably not yield the expected
+#       result.
 
 # ADD_OBJECT_RULE - Parameterized "function" that adds a pattern rule, using
 #   the commands from the second argument, for building object files from source
@@ -15,7 +16,7 @@
 #   USE WITH EVAL
 #
 define ADD_OBJECT_RULE
-$${BUILD_DIR}%.o: ${1}
+$${BUILD_DIR}/%.o: ${1}
 	${2}
 endef
 
@@ -46,11 +47,11 @@ define COMPILE_C_CMDS
 	@mkdir -p $(dir $@)
 	${CC} -o $@ -c -MD ${TGT_CFLAGS} ${CFLAGS} ${INCDIRS} ${TGT_INCS} \
 	    ${DEFS} ${TGT_DEFS} $<
-	@cp ${BUILD_DIR}$*.d ${BUILD_DIR}$*.P; \
+	@cp ${BUILD_DIR}/$*.d ${BUILD_DIR}/$*.P; \
 	 sed -e 's/#.*//' -e 's/^[^:]*: *//' -e 's/ *\\$$//' \
-	     -e '/^$$/ d' -e 's/$$/ :/' < ${BUILD_DIR}$*.d \
-	     >> ${BUILD_DIR}$*.P; \
-	 rm -f ${BUILD_DIR}$*.d
+	     -e '/^$$/ d' -e 's/$$/ :/' < ${BUILD_DIR}/$*.d \
+	     >> ${BUILD_DIR}/$*.P; \
+	 rm -f ${BUILD_DIR}/$*.d
 endef
 
 # COMPILE_CXX_CMDS - Commands for compiling C++ source code.
@@ -58,11 +59,11 @@ define COMPILE_CXX_CMDS
 	@mkdir -p $(dir $@)
 	${CXX} -o $@ -c -MD ${TGT_CXXFLAGS} ${CXXFLAGS} ${INCDIRS} \
 	    ${TGT_INCS} ${DEFS} ${TGT_DEFS} $<
-	@cp ${BUILD_DIR}$*.d ${BUILD_DIR}$*.P; \
+	@cp ${BUILD_DIR}/$*.d ${BUILD_DIR}/$*.P; \
 	 sed -e 's/#.*//' -e 's/^[^:]*: *//' -e 's/ *\\$$//' \
-	     -e '/^$$/ d' -e 's/$$/ :/' < ${BUILD_DIR}$*.d \
-	     >> ${BUILD_DIR}$*.P; \
-	 rm -f ${BUILD_DIR}$*.d
+	     -e '/^$$/ d' -e 's/$$/ :/' < ${BUILD_DIR}/$*.d \
+	     >> ${BUILD_DIR}/$*.P; \
+	 rm -f ${BUILD_DIR}/$*.d
 endef
 
 # INCLUDE_MODULE - Parameterized "function" that includes a new module into the
@@ -86,12 +87,11 @@ define INCLUDE_MODULE
     include ${1}
 
     # Ensure that valid values are set for BUILD_DIR and TARGET_DIR.
-    # XXX may want to verify that BUILD_DIR is slash-terminated if it's defined
-    ifndef BUILD_DIR
-        BUILD_DIR := build/
+    ifeq "$$(strip $${BUILD_DIR})" ""
+        BUILD_DIR := build
     endif
     ifeq "$$(strip $${TARGET_DIR})" ""
-        TARGET_DIR := ./
+        TARGET_DIR := .
     endif
 
     # A directory stack is maintained so that the correct paths are used as we
@@ -99,7 +99,7 @@ define INCLUDE_MODULE
     # it onto the stack.
     DIR := $(patsubst ./%,%,$(dir ${1}))
     DIR_STACK := $$(call PUSH,$${DIR_STACK},$${DIR})
-    OUT_DIR := $${BUILD_DIR}$${DIR}
+    OUT_DIR := $${BUILD_DIR}/$${DIR}
 
     # Determine which target this module's values apply to. A stack is used to
     # keep track of which target is the "current" target as we recursively
@@ -107,7 +107,7 @@ define INCLUDE_MODULE
     ifneq "$$(strip $${TARGET})" ""
         # This module defined a new target. Values defined by this module
         # apply to this new target.
-        TGT := $$(strip $${TARGET_DIR}$${TARGET})
+        TGT := $$(strip $${TARGET_DIR}/$${TARGET})
         ALL_TGTS += $${TGT}
         $${TGT}_OBJS :=
         $${TGT}_PRELIBS :=
@@ -159,7 +159,7 @@ define INCLUDE_MODULE
         # for the current target. Add the libraries to the target's prerequesite
         # library list and add target-specific variables for setting the
         # required linker directives.
-        $${TGT}_PRELIBS += $${TARGET_DIR}$${PRELIBS}
+        $${TGT}_PRELIBS += $${TARGET_DIR}/$${PRELIBS}
         $${TGT}: TGT_LDFLAGS := $$(patsubst %,-L%,$${TARGET_DIR})
         $${TGT}: TGT_LDLIBS += $$(patsubst lib%.a,-l%,$${PRELIBS})
     endif
@@ -177,7 +177,7 @@ define INCLUDE_MODULE
     # Reset the "current" directory to it's previous value.
     DIR_STACK := $$(call POP,$${DIR_STACK})
     DIR := $$(call PEEK,$${DIR_STACK})
-    OUT_DIR := $${BUILD_DIR}$${DIR}
+    OUT_DIR := $${BUILD_DIR}/$${DIR}
 endef
 
 # PEEK - Parameterized "function" that results in the value at the top of the
