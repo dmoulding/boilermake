@@ -6,7 +6,9 @@ MOD_INCDIRS := \
     animals/dog/chihuahua \
     animals/mouse
 
-PRELIBS := libanimals.a
+LIBS := animals
+
+PREREQS := libanimals.a
 
 SRCS := talk.cc
 

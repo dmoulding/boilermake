@@ -30,7 +30,7 @@ endef
 define ADD_TARGET
     ifeq "$$(strip $$(patsubst %.a,%,${1}))" "${1}"
         # Create a new target for linking an executable.
-        ${1}: $${${1}_OBJS} $${${1}_PRELIBS}
+        ${1}: $${${1}_OBJS} $${${1}_PREREQS}
 	    @mkdir -p $$(dir $$@)
 	    $${LNK} -o ${1} $${TGT_LDFLAGS} $${LDFLAGS} $${${1}_OBJS} \
 	        $${TGT_LDLIBS}
@@ -80,7 +80,7 @@ define INCLUDE_MODULE
     MOD_DEFS :=
     MOD_INCDIRS :=
     OBJS :=
-    PRELIBS :=
+    PREREQS :=
     SRCS :=
     SUBMODULES :=
     TARGET :=
@@ -110,7 +110,7 @@ define INCLUDE_MODULE
         TGT := $$(strip $${TARGET_DIR}/$${TARGET})
         ALL_TGTS += $${TGT}
         $${TGT}_OBJS :=
-        $${TGT}_PRELIBS :=
+        $${TGT}_PREREQS :=
         $${TGT}: TGT_LDLIBS :=
     else
         # The values defined by this module apply to the the "current" target
@@ -124,7 +124,7 @@ define INCLUDE_MODULE
     ifneq "$$(strip $${SRCS})" ""
         # This module builds one or more objects from source. Validate the
         # specified sources against the supported source file types.
-        BAD_SRCS := $$(strip $$(filter-out $${ALL_SRC_EXTS}, $${SRCS}))
+        BAD_SRCS := $$(strip $$(filter-out $${ALL_SRC_EXTS},$${SRCS}))
         ifneq "$${BAD_SRCS}" ""
             $$(error Unsupported source file(s) in module ${1} [$${BAD_SRCS}])
         endif
@@ -151,17 +151,19 @@ define INCLUDE_MODULE
         # This module wants to link the target with one or more outside
         # libraries. Add a target-specific variable for setting the required
         # linker directive(s).
-        $${TGT}: TGT_LDLIBS += $$(patsubst lib%.a,-l%,$${LIBS})
+        $${LIBS} := $$(patsubst lib%.a,%,$${LIBS})
+        $${TGT}: TGT_LDLIBS += $$(patsubst %,-l%,$${LIBS})
     endif
 
-    ifneq "$$(strip $${PRELIBS})" ""
-        # This module declares a dependency upon one ore more (local) libraries
-        # for the current target. Add the libraries to the target's prerequesite
-        # library list and add target-specific variables for setting the
-        # required linker directives.
-        $${TGT}_PRELIBS += $${TARGET_DIR}/$${PRELIBS}
-        $${TGT}: TGT_LDFLAGS := $$(patsubst %,-L%,$${TARGET_DIR})
-        $${TGT}: TGT_LDLIBS += $$(patsubst lib%.a,-l%,$${PRELIBS})
+    ifneq "$$(strip $${PREREQS})" ""
+        # This module declares that one or more targets are prerequesites of the
+        # the current target. Add the other targets to the current target's
+        # prerequesite list and add target-specific variables for setting the
+        # required linker directive if one of the prerequesites is a library.
+        $${TGT}_PREREQS += $$(patsubst %,$${TARGET_DIR}/%,$${PREREQS})
+        ifneq "$$(strip $$(filter %.a,$${PREREQS}))" ""
+            $${TGT}: TGT_LDFLAGS := $$(patsubst %,-L%,$${TARGET_DIR})
+        endif
     endif
 
     ifneq "$$(strip $${SUBMODULES})" ""
