@@ -5,7 +5,7 @@ ifeq "$(strip ${CFG})" ""
 endif
 
 INCDIRS    := animals
-LDFLAGS    :=
+LDFLAGS     = -L${TARGET_DIR}
 SUBMODULES := talk.mk
 
 ifeq "$(strip ${CFG})" "debug"

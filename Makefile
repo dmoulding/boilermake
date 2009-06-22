@@ -28,17 +28,17 @@ endef
 #   USE WITH EVAL
 #
 define ADD_TARGET
-    ifeq "$$(strip $$(patsubst %.a,%,${1}))" "${1}"
-        # Create a new target for linking an executable.
-        ${1}: $${${1}_OBJS} $${${1}_PREREQS}
-	    @mkdir -p $$(dir $$@)
-	    $${LNK} -o ${1} $${TGT_LDFLAGS} $${LDFLAGS} $${${1}_OBJS} \
-	        $${TGT_LDLIBS}
-    else
-        # Create a new target for creating a library archive.
+    ifeq "$$(suffix ${1})" ".a"
+        # Create a new target for creating a static library (archive).
         ${1}: $${${1}_OBJS}
 	    @mkdir -p $$(dir $$@)
 	    $${AR} r ${1} $${${1}_OBJS}
+    else
+        # Create a new target for linking an executable.
+        ${1}: $${${1}_OBJS} $${${1}_PREREQS}
+	    @mkdir -p $$(dir $$@)
+	    $${${1}_LNK} -o ${1} $${TGT_LDFLAGS} $${LDFLAGS} $${${1}_OBJS} \
+	        $${TGT_LDLIBS}
     endif
 endef
 
@@ -75,10 +75,12 @@ endef
 define INCLUDE_MODULE
     # Initialize module-specific variables, then include the module's file.
     LIBS :=
+    LNK :=
     MOD_CFLAGS :=
     MOD_CXXFLAGS :=
     MOD_DEFS :=
     MOD_INCDIRS :=
+    MOD_LDFLAGS :=
     OBJS :=
     PREREQS :=
     SRCS :=
@@ -109,9 +111,17 @@ define INCLUDE_MODULE
         # apply to this new target.
         TGT := $$(strip $${TARGET_DIR}/$${TARGET})
         ALL_TGTS += $${TGT}
-        $${TGT}_OBJS :=
-        $${TGT}_PREREQS :=
+        $${TGT}: TGT_LDFLAGS := $${MOD_LDFLAGS}
         $${TGT}: TGT_LDLIBS :=
+        $${TGT}_LNK := ${LNK}
+        $${TGT}_OBJS :=
+        $${TGT}_SRCS :=
+
+        ifneq "$$(strip $${PREREQS})" ""
+            # One or more other targets are prerequesites of this target. Add
+            # them to this target's list of prerequesites.
+            $${TGT}_PREREQS := $$(patsubst %,$${TARGET_DIR}/%,$${PREREQS})
+        endif
     else
         # The values defined by this module apply to the the "current" target
         # as determined by which target is at the top of the stack.
@@ -128,7 +138,7 @@ define INCLUDE_MODULE
         ifneq "$${BAD_SRCS}" ""
             $$(error Unsupported source file(s) in module ${1} [$${BAD_SRCS}])
         endif
-        ALL_SRCS += $${SRCS}
+        $${TGT}_SRCS += $${SRCS}
 
         # Convert the source file names to their corresponding object file
         # names.
@@ -153,17 +163,6 @@ define INCLUDE_MODULE
         # linker directive(s).
         $${LIBS} := $$(patsubst lib%.a,%,$${LIBS})
         $${TGT}: TGT_LDLIBS += $$(patsubst %,-l%,$${LIBS})
-    endif
-
-    ifneq "$$(strip $${PREREQS})" ""
-        # This module declares that one or more targets are prerequesites of the
-        # the current target. Add the other targets to the current target's
-        # prerequesite list and add target-specific variables for setting the
-        # required linker directive if one of the prerequesites is a library.
-        $${TGT}_PREREQS += $$(patsubst %,$${TARGET_DIR}/%,$${PREREQS})
-        ifneq "$$(strip $$(filter %.a,$${PREREQS}))" ""
-            $${TGT}: TGT_LDFLAGS := $$(patsubst %,-L%,$${TARGET_DIR})
-        endif
     endif
 
     ifneq "$$(strip $${SUBMODULES})" ""
@@ -201,6 +200,28 @@ define PUSH
 $(patsubst %,${1}:%,${2})
 endef
 
+# SELECT_LINKER - Parameterized "function" that attempts to select the
+#   appropriate front-end to the linker which should be used for linking an
+#   executable target. Note that this function can be safely called for all
+#   targets (even static libraries). For targets that don't require linking
+#   (such as static libraries), the end result of this function will have no
+#   effect on the target's final creation.
+#
+#   USE WITH EVAL
+#
+define SELECT_LINKER
+    ifeq "$$(strip $${${1}_LNK})" ""
+        # No linker was explicitly specified to be used for this target. If
+        # there are any C++ sources for this target, use the C++ compiler.
+        # For all other targets, default to using the C compiler.
+        ifneq "$$(strip $$(filter $${CXX_SRC_EXTS},$${${1}_SRCS}))" ""
+            ${1}_LNK = $${CXX}
+        else
+            ${1}_LNK = $${CC}
+        endif
+    endif
+endef
+
 ###############################################################################
 #
 # Start of Makefile Evaluation
@@ -220,7 +241,6 @@ ALL_TGTS :=
 DEFS :=
 DIR_STACK :=
 INCDIRS :=
-LNK :=
 TGT_STACK :=
 
 # Include the main user-supplied module. This also recursively includes all
@@ -232,19 +252,12 @@ ALL_DEPS := $(patsubst %.o,%.P,${ALL_OBJS})
 DEFS := $(patsubst %,-D%,${DEFS})
 INCDIRS := $(patsubst %,-I%,${INCDIRS})
 
-ifeq "$(strip ${LNK})" ""
-    # Determine whether to use the C or C++ compiler as the front-end to the
-    # linker. If there are any C++ sources, use the C++ compiler.
-    ifneq "$(strip $(filter ${CXX_SRC_EXTS},${ALL_SRCS}))" ""
-        LNK := ${CXX}
-    else
-        LNK := ${CC}
-    endif
-endif
-
 # Define "all", which simply builds all user-defined targets, as default goal.
 .PHONY: all
 all: ${ALL_TGTS}
+
+# Select the linker to be used for each user-defined target.
+$(foreach TGT,${ALL_TGTS},$(eval $(call SELECT_LINKER,${TGT})))
 
 # Add a new target rule for each user-defined target.
 $(foreach TGT,${ALL_TGTS},$(eval $(call ADD_TARGET,${TGT})))
