@@ -33,12 +33,14 @@ define ADD_TARGET
         ${1}: $${${1}_OBJS}
 	    @mkdir -p $$(dir $$@)
 	    $${AR} $${ARFLAGS} ${1} $${${1}_OBJS}
+	    $${TGT_POSTMAKE}
     else
         # Add a target for linking an executable.
         ${1}: $${${1}_OBJS} $${${1}_PREREQS}
 	    @mkdir -p $$(dir $$@)
 	    $${TGT_LINKER} -o ${1} $${TGT_LDFLAGS} $${LDFLAGS} $${${1}_OBJS} \
 	        $${LDLIBS} $${TGT_LDLIBS}
+	    $${TGT_POSTMAKE}
     endif
 endef
 
@@ -79,6 +81,7 @@ define INCLUDE_MK
     TGT_LDLIBS :=
     TGT_LINKER :=
     TGT_LDFLAGS :=
+    TGT_POSTMAKE :=
     TGT_PREREQS :=
 
     SOURCES :=
@@ -120,6 +123,7 @@ define INCLUDE_MK
         $${TGT}: TGT_LDFLAGS := $${TGT_LDFLAGS}
         $${TGT}: TGT_LDLIBS := $${TGT_LDLIBS}
         $${TGT}: TGT_LINKER := $${TGT_LINKER}
+        $${TGT}: TGT_POSTMAKE := $${TGT_POSTMAKE}
         $${TGT}_LINKER := $${TGT_LINKER}
         $${TGT}_PREREQS := $$(patsubst %,$${TARGET_DIR}/%,$${TGT_PREREQS})
 
@@ -271,3 +275,4 @@ $(foreach EXT,${CXX_SRC_EXTS},\
 .PHONY: clean
 clean:
 	rm -f ${ALL_TGTS} ${ALL_OBJS} ${ALL_DEPS}
+	${POSTCLEAN}
