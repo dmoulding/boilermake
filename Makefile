@@ -32,7 +32,7 @@ define ADD_TARGET
         # Create a new target for creating a static library (archive).
         ${1}: $${${1}_OBJS}
 	    @mkdir -p $$(dir $$@)
-	    $${AR} r ${1} $${${1}_OBJS}
+	    $${AR} $${ARFLAGS} ${1} $${${1}_OBJS}
     else
         # Create a new target for linking an executable.
         ${1}: $${${1}_OBJS} $${${1}_PREREQS}
