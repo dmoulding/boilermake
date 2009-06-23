@@ -1,8 +1,8 @@
 TARGET := libanimals.a
 
-SRCS := animal.cc
+SOURCES := animal.cc
 
-SUBMODULES := \
+SUBMAKEFILES := \
     cat/cat.mk \
     dog/dog.mk \
     mouse/mouse.mk

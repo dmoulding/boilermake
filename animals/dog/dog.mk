@@ -1,3 +1,3 @@
-SRCS := dog.cc
+SOURCES := dog.cc
 
-SUBMODULES := chihuahua/chihuahua.mk
+SUBMAKEFILES := chihuahua/chihuahua.mk

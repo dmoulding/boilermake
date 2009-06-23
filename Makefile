@@ -29,24 +29,24 @@ endef
 #
 define ADD_TARGET
     ifeq "$$(suffix ${1})" ".a"
-        # Create a new target for creating a static library (archive).
+        # Add a target for creating a static library.
         ${1}: $${${1}_OBJS}
 	    @mkdir -p $$(dir $$@)
 	    $${AR} $${ARFLAGS} ${1} $${${1}_OBJS}
     else
-        # Create a new target for linking an executable.
+        # Add a target for linking an executable.
         ${1}: $${${1}_OBJS} $${${1}_PREREQS}
 	    @mkdir -p $$(dir $$@)
-	    $${${1}_LNK} -o ${1} $${TGT_LDFLAGS} $${LDFLAGS} $${${1}_OBJS} \
-	        $${TGT_LDLIBS}
+	    $${TGT_LINKER} -o ${1} $${TGT_LDFLAGS} $${LDFLAGS} $${${1}_OBJS} \
+	        $${LDLIBS} $${TGT_LDLIBS}
     endif
 endef
 
 # COMPILE_C_CMDS - Commands for compiling C source code.
 define COMPILE_C_CMDS
 	@mkdir -p $(dir $@)
-	${CC} -o $@ -c -MD ${TGT_CFLAGS} ${CFLAGS} ${INCDIRS} ${TGT_INCS} \
-	    ${DEFS} ${TGT_DEFS} $<
+	${CC} -o $@ -c -MD ${SRC_CFLAGS} ${CFLAGS} ${INCDIRS} ${SRC_INCDIRS} \
+	    ${SRC_DEFS} ${DEFS} $<
 	@cp ${BUILD_DIR}/$*.d ${BUILD_DIR}/$*.P; \
 	 sed -e 's/#.*//' -e 's/^[^:]*: *//' -e 's/ *\\$$//' \
 	     -e '/^$$/ d' -e 's/$$/ :/' < ${BUILD_DIR}/$*.d \
@@ -57,8 +57,8 @@ endef
 # COMPILE_CXX_CMDS - Commands for compiling C++ source code.
 define COMPILE_CXX_CMDS
 	@mkdir -p $(dir $@)
-	${CXX} -o $@ -c -MD ${TGT_CXXFLAGS} ${CXXFLAGS} ${INCDIRS} \
-	    ${TGT_INCS} ${DEFS} ${TGT_DEFS} $<
+	${CXX} -o $@ -c -MD ${SRC_CXXFLAGS} ${CXXFLAGS} ${INCDIRS} \
+	    ${SRC_INCDIRS} ${SRC_DEFS} ${DEFS} $<
 	@cp ${BUILD_DIR}/$*.d ${BUILD_DIR}/$*.P; \
 	 sed -e 's/#.*//' -e 's/^[^:]*: *//' -e 's/ *\\$$//' \
 	     -e '/^$$/ d' -e 's/$$/ :/' < ${BUILD_DIR}/$*.d \
@@ -66,27 +66,33 @@ define COMPILE_CXX_CMDS
 	 rm -f ${BUILD_DIR}/$*.d
 endef
 
-# INCLUDE_MODULE - Parameterized "function" that includes a new module into the
-#   makefile. It also recursively includes all submodules of the specified
-#   module.
+# INCLUDE_MK - Parameterized "function" that includes a new makefile fragment
+#   into the overall makefile. It also recursively includes all submakefiles of
+#   the specified makefile fragment.
 #
 #   USE WITH EVAL
 #
-define INCLUDE_MODULE
-    # Initialize module-specific variables, then include the module's file.
-    LIBS :=
-    LNK :=
-    MOD_CFLAGS :=
-    MOD_CXXFLAGS :=
-    MOD_DEFS :=
-    MOD_INCDIRS :=
-    MOD_LDFLAGS :=
-    OBJS :=
-    PREREQS :=
-    SRCS :=
-    SUBMODULES :=
+define INCLUDE_MK
+    # Initialize all variables that can be defined by a makefile fragment, then
+    # include the specified makefile fragment.
     TARGET :=
+    TGT_LDLIBS :=
+    TGT_LINKER :=
+    TGT_LDFLAGS :=
+    TGT_PREREQS :=
+
+    SOURCES :=
+    SRC_CFLAGS :=
+    SRC_CXXFLAGS :=
+    SRC_DEFS :=
+    SRC_INCDIRS :=
+
+    SUBMAKEFILES :=
+
     include ${1}
+
+    # Initialize internal local variables.
+    OBJS :=
 
     # Ensure that valid values are set for BUILD_DIR and TARGET_DIR.
     ifeq "$$(strip $${BUILD_DIR})" ""
@@ -97,33 +103,30 @@ define INCLUDE_MODULE
     endif
 
     # A directory stack is maintained so that the correct paths are used as we
-    # recursively include all submodules. Get the module's directory and push
-    # it onto the stack.
+    # recursively include all submakefiles. Get the makefile's directory and
+    # push it onto the stack.
     DIR := $(patsubst ./%,%,$(dir ${1}))
     DIR_STACK := $$(call PUSH,$${DIR_STACK},$${DIR})
     OUT_DIR := $${BUILD_DIR}/$${DIR}
 
-    # Determine which target this module's values apply to. A stack is used to
-    # keep track of which target is the "current" target as we recursively
-    # include other modules.
+    # Determine which target this makefile's variables apply to. A stack is used
+    # to keep track of which target is the "current" target as we recursively
+    # include other submakefiles.
     ifneq "$$(strip $${TARGET})" ""
-        # This module defined a new target. Values defined by this module
-        # apply to this new target.
+        # This makefile defined a new target. Target variables defined by this
+        # makefile apply to this new target. Initialize the target's variables.
         TGT := $$(strip $${TARGET_DIR}/$${TARGET})
         ALL_TGTS += $${TGT}
-        $${TGT}: TGT_LDFLAGS := $${MOD_LDFLAGS}
-        $${TGT}: TGT_LDLIBS :=
-        $${TGT}_LNK := ${LNK}
-        $${TGT}_OBJS :=
-        $${TGT}_SRCS :=
+        $${TGT}: TGT_LDFLAGS := $${TGT_LDFLAGS}
+        $${TGT}: TGT_LDLIBS := $${TGT_LDLIBS}
+        $${TGT}: TGT_LINKER := $${TGT_LINKER}
+        $${TGT}_LINKER := $${TGT_LINKER}
+        $${TGT}_PREREQS := $$(patsubst %,$${TARGET_DIR}/%,$${TGT_PREREQS})
 
-        ifneq "$$(strip $${PREREQS})" ""
-            # One or more other targets are prerequesites of this target. Add
-            # them to this target's list of prerequesites.
-            $${TGT}_PREREQS := $$(patsubst %,$${TARGET_DIR}/%,$${PREREQS})
-        endif
+        $${TGT}_OBJS :=
+        $${TGT}_SOURCES :=
     else
-        # The values defined by this module apply to the the "current" target
+        # The values defined by this makefile apply to the the "current" target
         # as determined by which target is at the top of the stack.
         TGT := $$(strip $$(call PEEK,$${TGT_STACK}))
     endif
@@ -131,44 +134,36 @@ define INCLUDE_MODULE
     # Push the current target onto the target stack.
     TGT_STACK := $$(call PUSH,$${TGT_STACK},$${TGT})
 
-    ifneq "$$(strip $${SRCS})" ""
-        # This module builds one or more objects from source. Validate the
+    ifneq "$$(strip $${SOURCES})" ""
+        # This makefile builds one or more objects from source. Validate the
         # specified sources against the supported source file types.
-        BAD_SRCS := $$(strip $$(filter-out $${ALL_SRC_EXTS},$${SRCS}))
+        BAD_SRCS := $$(strip $$(filter-out $${ALL_SRC_EXTS},$${SOURCES}))
         ifneq "$${BAD_SRCS}" ""
-            $$(error Unsupported source file(s) in module ${1} [$${BAD_SRCS}])
+            $$(error Unsupported source file(s) found in ${1} [$${BAD_SRCS}])
         endif
-        $${TGT}_SRCS += $${SRCS}
+        $${TGT}_SOURCES += $${SOURCES}
 
         # Convert the source file names to their corresponding object file
         # names.
-        OBJS := $${SRCS}
+        OBJS := $${SOURCES}
         $$(foreach EXT,$${ALL_SRC_EXTS},$$(eval OBJS := $${OBJS:$${EXT}=%.o}))
 
         # Add the objects to the current target's list of objects, and create
-        # target-specific variables for the objects based on any module-specific
-        # flags that were defined.
+        # target-specific variables for the objects based on any source
+        # variables that were defined.
         OBJS := $$(patsubst %,$${OUT_DIR}%,$${OBJS})
         ALL_OBJS += $${OBJS}
         $${TGT}_OBJS += $${OBJS}
-        $${OBJS}: TGT_CFLAGS := $${MOD_CFLAGS}
-        $${OBJS}: TGT_CXXFLAGS := $${MOD_CXXFLAGS}
-        $${OBJS}: TGT_DEFS := $$(patsubst %,-D%,$${MOD_DEFS})
-        $${OBJS}: TGT_INCS := $$(patsubst %,-I%,$${MOD_INCDIRS})
+        $${OBJS}: SRC_CFLAGS := $${SRC_CFLAGS}
+        $${OBJS}: SRC_CXXFLAGS := $${SRC_CXXFLAGS}
+        $${OBJS}: SRC_DEFS := $$(patsubst %,-D%,$${SRC_DEFS})
+        $${OBJS}: SRC_INCDIRS := $$(patsubst %,-I%,$${SRC_INCDIRS})
     endif
 
-    ifneq "$$(strip $${LIBS})" ""
-        # This module wants to link the target with one or more outside
-        # libraries. Add a target-specific variable for setting the required
-        # linker directive(s).
-        $${LIBS} := $$(patsubst lib%.a,%,$${LIBS})
-        $${TGT}: TGT_LDLIBS += $$(patsubst %,-l%,$${LIBS})
-    endif
-
-    ifneq "$$(strip $${SUBMODULES})" ""
-        # This module has submodules. Recursively include them.
-        $$(foreach MOD,$${SUBMODULES}, \
-            $$(eval $$(call INCLUDE_MODULE,$${DIR}$${MOD})))
+    ifneq "$$(strip $${SUBMAKEFILES})" ""
+        # This makefile has submakefiles. Recursively include them.
+        $$(foreach MK,$${SUBMAKEFILES}, \
+            $$(eval $$(call INCLUDE_MK,$${DIR}$${MK})))
     endif
 
     # Reset the "current" target to it's previous value.
@@ -210,14 +205,14 @@ endef
 #   USE WITH EVAL
 #
 define SELECT_LINKER
-    ifeq "$$(strip $${${1}_LNK})" ""
+    ifeq "$$(strip $${${1}_LINKER})" ""
         # No linker was explicitly specified to be used for this target. If
         # there are any C++ sources for this target, use the C++ compiler.
         # For all other targets, default to using the C compiler.
-        ifneq "$$(strip $$(filter $${CXX_SRC_EXTS},$${${1}_SRCS}))" ""
-            ${1}_LNK = $${CXX}
+        ifneq "$$(strip $$(filter $${CXX_SRC_EXTS},$${${1}_SOURCES}))" ""
+            ${1}: TGT_LINKER = $${CXX}
         else
-            ${1}_LNK = $${CC}
+            ${1}: TGT_LINKER = $${CC}
         endif
     endif
 endef
@@ -236,16 +231,15 @@ ALL_SRC_EXTS := ${C_SRC_EXTS} ${CXX_SRC_EXTS}
 # Initialize global variables.
 ALL_DEPS :=
 ALL_OBJS :=
-ALL_SRCS :=
 ALL_TGTS :=
 DEFS :=
 DIR_STACK :=
 INCDIRS :=
 TGT_STACK :=
 
-# Include the main user-supplied module. This also recursively includes all
-# user-supplied submodules.
-$(eval $(call INCLUDE_MODULE,main.mk))
+# Include the main user-supplied makefile. This also recursively includes all
+# user-supplied submakefiles.
+$(eval $(call INCLUDE_MK,main.mk))
 
 # Perform post-processing on global variables as needed.
 ALL_DEPS := $(patsubst %.o,%.P,${ALL_OBJS})

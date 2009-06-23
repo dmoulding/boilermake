@@ -1,1 +1,1 @@
-SRCS := cat.cc
+SOURCES := cat.cc

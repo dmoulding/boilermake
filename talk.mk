@@ -1,15 +1,14 @@
 TARGET := talk
 
-MOD_INCDIRS := \
+TGT_LDLIBS := -lanimals
+TGT_PREREQS := libanimals.a
+
+SOURCES := talk.cc
+
+SRC_INCDIRS := \
     animals/cat \
     animals/dog \
     animals/dog/chihuahua \
     animals/mouse
 
-LIBS := animals
-
-PREREQS := libanimals.a
-
-SRCS := talk.cc
-
-SUBMODULES := animals/animals.mk
+SUBMAKEFILES := animals/animals.mk

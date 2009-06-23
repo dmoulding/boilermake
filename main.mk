@@ -4,9 +4,8 @@ ifeq "$(strip ${CFG})" ""
     CFG := ${DEFAULT_CFG}
 endif
 
-INCDIRS    := animals
-LDFLAGS     = -L${TARGET_DIR}
-SUBMODULES := talk.mk
+INCDIRS := animals
+LDFLAGS  = -L${TARGET_DIR}
 
 ifeq "$(strip ${CFG})" "debug"
     BUILD_DIR  := debug
@@ -17,3 +16,5 @@ else ifeq "$(strip ${CFG})" "release"
     CXXFLAGS   := -g -O2 -Wall -pipe
     TARGET_DIR := release
 endif
+
+SUBMAKEFILES := talk.mk

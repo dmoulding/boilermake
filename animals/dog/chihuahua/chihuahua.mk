@@ -1,5 +1,4 @@
-MOD_DEFS := TACO_BELL
+SOURCES := chihuahua.cc
 
-MOD_INCDIRS := animals/dog
-
-SRCS := chihuahua.cc
+SRC_DEFS := TACO_BELL
+SRC_INCDIRS := animals/dog

@@ -1,1 +1,1 @@
-SRCS := mouse.cc
+SOURCES := mouse.cc
