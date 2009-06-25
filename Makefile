@@ -35,7 +35,22 @@ define ADD_TARGET
 	    $${AR} $${ARFLAGS} ${1} $${${1}_OBJS}
 	    $${TGT_POSTMAKE}
     else
-        # Add a target for linking an executable.
+        # Add a target for linking an executable. First, attempt to select the
+        # appropriate front-end to use for linking. This might not choose the
+        # right one (e.g. if linking with a C++ static library, but all other
+        # sources are C sources), so the user makefile is allowed to specify a
+        # linker to be used for each target.
+        ifeq "$$(strip $${${1}_LINKER})" ""
+            # No linker was explicitly specified to be used for this target. If
+            # there are any C++ sources for this target, use the C++ compiler.
+            # For all other targets, default to using the C compiler.
+            ifneq "$$(strip $$(filter $${CXX_SRC_EXTS},$${${1}_SOURCES}))" ""
+                ${1}: TGT_LINKER = $${CXX}
+            else
+                ${1}: TGT_LINKER = $${CC}
+            endif
+        endif
+
         ${1}: $${${1}_OBJS} $${${1}_PREREQS}
 	    @mkdir -p $$(dir $$@)
 	    $${TGT_LINKER} -o ${1} $${TGT_LDFLAGS} $${LDFLAGS} $${${1}_OBJS} \
@@ -199,28 +214,6 @@ define PUSH
 $(patsubst %,${1}:%,${2})
 endef
 
-# SELECT_LINKER - Parameterized "function" that attempts to select the
-#   appropriate front-end to the linker which should be used for linking an
-#   executable target. Note that this function can be safely called for all
-#   targets (even static libraries). For targets that don't require linking
-#   (such as static libraries), the end result of this function will have no
-#   effect on the target's final creation.
-#
-#   USE WITH EVAL
-#
-define SELECT_LINKER
-    ifeq "$$(strip $${${1}_LINKER})" ""
-        # No linker was explicitly specified to be used for this target. If
-        # there are any C++ sources for this target, use the C++ compiler.
-        # For all other targets, default to using the C compiler.
-        ifneq "$$(strip $$(filter $${CXX_SRC_EXTS},$${${1}_SOURCES}))" ""
-            ${1}: TGT_LINKER = $${CXX}
-        else
-            ${1}: TGT_LINKER = $${CC}
-        endif
-    endif
-endef
-
 ###############################################################################
 #
 # Start of Makefile Evaluation
@@ -253,9 +246,6 @@ INCDIRS := $(patsubst %,-I%,${INCDIRS})
 # Define "all", which simply builds all user-defined targets, as default goal.
 .PHONY: all
 all: ${ALL_TGTS}
-
-# Select the linker to be used for each user-defined target.
-$(foreach TGT,${ALL_TGTS},$(eval $(call SELECT_LINKER,${TGT})))
 
 # Add a new target rule for each user-defined target.
 $(foreach TGT,${ALL_TGTS},$(eval $(call ADD_TARGET,${TGT})))
