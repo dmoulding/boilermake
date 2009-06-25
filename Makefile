@@ -93,9 +93,9 @@ define INCLUDE_MK
     # Initialize all variables that can be defined by a makefile fragment, then
     # include the specified makefile fragment.
     TARGET :=
+    TGT_LDFLAGS :=
     TGT_LDLIBS :=
     TGT_LINKER :=
-    TGT_LDFLAGS :=
     TGT_POSTMAKE :=
     TGT_PREREQS :=
 
