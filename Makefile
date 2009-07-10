@@ -96,6 +96,7 @@ define INCLUDE_MK
     TGT_LDFLAGS :=
     TGT_LDLIBS :=
     TGT_LINKER :=
+    TGT_POSTCLEAN :=
     TGT_POSTMAKE :=
     TGT_PREREQS :=
 
@@ -140,6 +141,7 @@ define INCLUDE_MK
         $${TGT}: TGT_LINKER := $${TGT_LINKER}
         $${TGT}: TGT_POSTMAKE := $${TGT_POSTMAKE}
         $${TGT}_LINKER := $${TGT_LINKER}
+        $${TGT}_POSTCLEAN := $${TGT_POSTCLEAN}
         $${TGT}_PREREQS := $$(patsubst %,$${TARGET_DIR}/%,$${TGT_PREREQS})
 
         $${TGT}_OBJS :=
@@ -176,7 +178,7 @@ define INCLUDE_MK
         $${OBJS}: SRC_CFLAGS := $${SRC_CFLAGS}
         $${OBJS}: SRC_CXXFLAGS := $${SRC_CXXFLAGS}
         $${OBJS}: SRC_DEFS := $$(patsubst %,-D%,$${SRC_DEFS})
-        $${OBJS}: SRC_INCDIRS := $$(patsubst %,-I%,$${SRC_INCDIRS})
+        $${OBJS}: SRC_INCDIRS := $$(patsubst %,-I%,$${DIR}$${SRC_INCDIRS})
     endif
 
     ifneq "$$(strip $${SUBMAKEFILES})" ""
@@ -260,6 +262,11 @@ $(foreach EXT,${CXX_SRC_EXTS},\
 
 # Include generated rules that define additional (header) dependencies.
 -include ${ALL_DEPS}
+
+define POSTCLEAN
+	$(foreach TGT,${ALL_TGTS},${${TGT}_POSTCLEAN}
+         )
+endef
 
 # Define "clean" target to remove all build-generated files.
 .PHONY: clean

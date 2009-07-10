@@ -167,6 +167,13 @@ TGT_LDLIBS :=
 #   Default value: <none>
 TGT_LINKER :=
 
+# TGT_POSTCLEAN specifies one or more actions to be performed after the target
+#   has been cleaned. These should be entered as shell commands (normal GNU Make
+#   processing applies, so you can use make variables in the commands).
+#
+#   See TGT_POSTMAKE below for more related information.
+TGT_POSTCLEAN :=
+
 # TGT_POSTMAKE specifies one or more actions to be performed after the target
 #   has been made. These should be entered as shell commands (normal GNU Make
 #   processing applies, so you can use make variables in the commands).
