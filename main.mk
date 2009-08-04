@@ -32,7 +32,8 @@ BUILD_DIR :=
 # INCDIRS globally specifies include directories to be searched during source
 #   compilation. These will apply to sources from all submakefiles and for all
 #   targets. These should be specified as just directory names (i.e. they should
-#   not be prefixed with a "-I".
+#   not be prefixed with a "-I". The paths should be specified relative to the
+#   root of the project (i.e. the directory from which you run make).
 #
 #   Default value: <none>
 INCDIRS :=
@@ -70,8 +71,8 @@ SOURCES :=
 #   and SRC_DEFS (or their global equivalents, INCDIRS and DEFS) can often be
 #   more convenient (you don't need to type all those extra "-I"s or "-D"s).
 #
-#   Examples of flags that are often specified here include "-g" and "-O2" (or
-#   "-O0").
+#   Examples of flags that are often specified here include "-pthread" and
+#   the "-std=xxx" flags.
 #
 #   Default value: <none>
 SRC_CFLAGS :=
@@ -90,7 +91,9 @@ SRC_DEFS :=
 
 # SRC_INCDIRS specifies include directories to be searched during compilation of
 #   sources listed in the current (sub)makefile only. This can be used to
-#   augment the globally applied INCDIRS for selected sources.
+#   augment the globally applied INCDIRS for selected sources. Unlike the global
+#   INCDIRS variable, paths assigned to this variable should be relative to the
+#   *current* (sub)makefile's directory (not the root of the project).
 #
 #   Default value: <none>
 SRC_INCDIRS :=
@@ -114,7 +117,7 @@ SUBMAKEFILES :=
 #   static library. All others are treated as executables. By default, the
 #   Makefile will build all targets if "make" is invoked without specifying a
 #   target. This behavior can be overridden using the GNU Make variable
-#   ".DEFAULT_GOAL", if desired. At least one target must be defined, in order
+#   ".DEFAULT_GOAL", if desired. At least one target must be defined in order
 #   to do anything useful.
 #
 #   The TARGET variable should be specified only *once* anywhere in the makefile
@@ -159,10 +162,11 @@ TGT_LDFLAGS :=
 #   Default value: <none>
 TGT_LDLIBS :=
 
-# TGT_LINKER specifies the program to be used for linking the target. If this is
-#   not specified, the Makefile will attempt to make a reasonable choice based
-#   upon the sources that are prerequesites of the target (e.g. it will choose
-#   g++ if there are C++ sources, otherwise it will choose cc).
+# TGT_LINKER specifies the program to be used for linking the target (applies to
+#   executable targets only). If this option is not specified, the Makefile will
+#   attempt to make a reasonable choice based upon the sources that are
+#   prerequesites of the target (it will choose g++ if there are C++ sources,
+#   otherwise it will choose cc).
 #
 #   Default value: <none>
 TGT_LINKER :=
@@ -195,8 +199,8 @@ TGT_POSTMAKE :=
 
 # TGT_PREREQS can be used to specify dependencies between targets. For example,
 #   an executable target may depend on one or more static library targets
-#   defined elsewhere. This variable can be used to tell the Makefile that the
-#   target depends on those libraries.
+#   defined elsewhere. This variable can be used to tell Make that the
+#   executable depends on those libraries.
 #
 #   Default value: <none>
 TGT_PREREQS :=
