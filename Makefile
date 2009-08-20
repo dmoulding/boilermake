@@ -20,6 +20,19 @@ $${BUILD_DIR}/%.o: ${1}
 	${2}
 endef
 
+# ADD_CLEAN_TARGET - Parameterized "function" that adds a new phony target for
+#   cleaning the specified target (removing its build-generated files).
+#
+#   USE WITH EVAL
+#
+define ADD_CLEAN_TARGET
+    clean: clean_${1}
+    .PHONY: clean_${1}
+    clean_${1}:
+	rm -f ${1} $$(patsubst %.o,%.[oP],$${${1}_OBJS})
+	$${${1}_POSTCLEAN}
+endef
+
 # ADD_TARGET - Parameterized "function" that adds a new target to the Makefile.
 #   The target may be an executable or a library. The two allowable types of
 #   targets are distinguished based on the name: library targets must end with
@@ -144,6 +157,7 @@ define INCLUDE_MK
         $${TGT}_POSTCLEAN := $${TGT_POSTCLEAN}
         $${TGT}_PREREQS := $$(patsubst %,$${TARGET_DIR}/%,$${TGT_PREREQS})
 
+        $${TGT}_DEPS :=
         $${TGT}_OBJS :=
         $${TGT}_SOURCES :=
     else
@@ -173,8 +187,8 @@ define INCLUDE_MK
         # target-specific variables for the objects based on any source
         # variables that were defined.
         OBJS := $$(patsubst %,$${OUT_DIR}%,$${OBJS})
-        ALL_OBJS += $${OBJS}
         $${TGT}_OBJS += $${OBJS}
+        $${TGT}_DEPS += $$(patsubst %.o,%.P,$${OBJS})
         $${OBJS}: SRC_CFLAGS := $${SRC_CFLAGS}
         $${OBJS}: SRC_CXXFLAGS := $${SRC_CXXFLAGS}
         $${OBJS}: SRC_DEFS := $$(patsubst %,-D%,$${SRC_DEFS})
@@ -228,8 +242,6 @@ CXX_SRC_EXTS := %.C %.cc %.cp %.cpp %.CPP %.cxx %.c++
 ALL_SRC_EXTS := ${C_SRC_EXTS} ${CXX_SRC_EXTS}
 
 # Initialize global variables.
-ALL_DEPS :=
-ALL_OBJS :=
 ALL_TGTS :=
 DEFS :=
 DIR_STACK :=
@@ -241,7 +253,6 @@ TGT_STACK :=
 $(eval $(call INCLUDE_MK,main.mk))
 
 # Perform post-processing on global variables as needed.
-ALL_DEPS := $(patsubst %.o,%.P,${ALL_OBJS})
 DEFS := $(patsubst %,-D%,${DEFS})
 INCDIRS := $(patsubst %,-I%,${INCDIRS})
 
@@ -260,16 +271,9 @@ $(foreach EXT,${C_SRC_EXTS},\
 $(foreach EXT,${CXX_SRC_EXTS},\
   $(eval $(call ADD_OBJECT_RULE,${EXT},$${COMPILE_CXX_CMDS})))
 
-# Include generated rules that define additional (header) dependencies.
--include ${ALL_DEPS}
-
-define POSTCLEAN
-	$(foreach TGT,${ALL_TGTS},${${TGT}_POSTCLEAN}
-         )
-endef
-
-# Define "clean" target to remove all build-generated files.
+# Add "clean" targets to remove all build-generated files.
 .PHONY: clean
-clean:
-	rm -f ${ALL_TGTS} ${ALL_OBJS} ${ALL_DEPS}
-	${POSTCLEAN}
+$(foreach TGT,${ALL_TGTS},$(eval $(call ADD_CLEAN_TARGET,${TGT})))
+
+# Include generated rules that define additional (header) dependencies.
+$(foreach TGT,${ALL_TGTS},$(eval -include ${${TGT}_DEPS}))
