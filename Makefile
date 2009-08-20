@@ -72,6 +72,17 @@ define ADD_TARGET
     endif
 endef
 
+# CANONICAL_PATH - For the given pathnames, converts them to the canonical form
+#   relative to the top-level directory (the directory from which "make" was
+#   invoked). This removes "./" and "../" sequences. For paths that are not
+#   subdirectories of the top-level directory, the canonical form is relative
+#   to the root of the filesystem (i.e. it will start with "/").
+define CANONICAL_PATH
+    $(patsubst ${CURDIR}/%,%,\
+      $(foreach PATH,${1},\
+        $(shell readlink -m ${PATH})))
+endef
+
 # COMPILE_C_CMDS - Commands for compiling C source code.
 define COMPILE_C_CMDS
 	@mkdir -p $(dir $@)
@@ -192,7 +203,9 @@ define INCLUDE_MK
         $${OBJS}: SRC_CFLAGS := $${SRC_CFLAGS}
         $${OBJS}: SRC_CXXFLAGS := $${SRC_CXXFLAGS}
         $${OBJS}: SRC_DEFS := $$(patsubst %,-D%,$${SRC_DEFS})
-        $${OBJS}: SRC_INCDIRS := $$(patsubst %,-I%,$${DIR}$${SRC_INCDIRS})
+        $${OBJS}: SRC_INCDIRS := $$(patsubst %,-I%,\
+                                    $$(call CANONICAL_PATH,\
+                                       $$(patsubst %,$${DIR}%,$${SRC_INCDIRS})))
     endif
 
     ifneq "$$(strip $${SUBMAKEFILES})" ""
