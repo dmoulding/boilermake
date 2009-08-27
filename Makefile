@@ -211,7 +211,7 @@ define INCLUDE_MK
     ifneq "$$(strip $${SUBMAKEFILES})" ""
         # This makefile has submakefiles. Recursively include them.
         $$(foreach MK,$${SUBMAKEFILES}, \
-            $$(eval $$(call INCLUDE_MK,$${DIR}$${MK})))
+            $$(eval $$(call INCLUDE_MK,$$(call CANONICAL_PATH,$${DIR}$${MK}))))
     endif
 
     # Reset the "current" target to it's previous value.
