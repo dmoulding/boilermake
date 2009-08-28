@@ -187,6 +187,7 @@ define INCLUDE_MK
         ifneq "$${BAD_SRCS}" ""
             $$(error Unsupported source file(s) found in ${1} [$${BAD_SRCS}])
         endif
+        SOURCES := $$(call CANONICAL_PATH,$${SOURCES})
         $${TGT}_SOURCES += $${SOURCES}
 
         # Convert the source file names to their corresponding object file
