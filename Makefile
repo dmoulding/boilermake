@@ -1,17 +1,31 @@
-# Note: Parameterized "functions" in this makefile that are marked with
-#       "USE WITH EVAL" are only useful in conjuction with eval. This is because
-#       those functions result in a block of Makefile syntax that must be
-#       evaluated after expansion.
+# A reusable, but flexible, Makefile framework.
 #
-#       Since they must be used with eval, most instances of "$" within them
-#       need to be escaped with a second "$" to accomodate the double expansion
-#       that occurs when eval is invoked. Consequently, attempting to call these
-#       "functions" without also using eval will probably not yield the expected
-#       result.
+# Author: Dan Moulding <dmoulding@gmail.com> (2008)
+
+# Note: Parameterized "functions" in this makefile that are marked with
+#       "USE WITH EVAL" are only useful in conjuction with eval. This is
+#       because those functions result in a block of Makefile syntax that must
+#       be evaluated after expansion. Since they must be used with eval, most
+#       instances of "$" within them need to be escaped with a second "$" to
+#       accomodate the double expansion that occurs when eval is invoked.
+
+# ADD_CLEAN_RULE - Parameterized "function" that adds a new rule and phony
+#   target for cleaning the specified target (removing its build-generated
+#   files).
+#
+#   USE WITH EVAL
+#
+define ADD_CLEAN_RULE
+    clean: clean_${1}
+    .PHONY: clean_${1}
+    clean_${1}:
+	rm -f ${1} $$(patsubst %.o,%.[oP],$${${1}_OBJS})
+	$${${1}_POSTCLEAN}
+endef
 
 # ADD_OBJECT_RULE - Parameterized "function" that adds a pattern rule, using
-#   the commands from the second argument, for building object files from source
-#   files with the filename extension specified in the first argument.
+#   the commands from the second argument, for building object files from
+#   source files with the filename extension specified in the first argument.
 #
 #   USE WITH EVAL
 #
@@ -20,27 +34,14 @@ $${BUILD_DIR}/%.o: ${1}
 	${2}
 endef
 
-# ADD_CLEAN_TARGET - Parameterized "function" that adds a new phony target for
-#   cleaning the specified target (removing its build-generated files).
+# ADD_TARGET_RULE - Parameterized "function" that adds a new target to the
+#   Makefile. The target may be an executable or a library. The two allowable
+#   types of targets are distinguished based on the name: library targets must
+#   end with the traditional ".a" extension.
 #
 #   USE WITH EVAL
 #
-define ADD_CLEAN_TARGET
-    clean: clean_${1}
-    .PHONY: clean_${1}
-    clean_${1}:
-	rm -f ${1} $$(patsubst %.o,%.[oP],$${${1}_OBJS})
-	$${${1}_POSTCLEAN}
-endef
-
-# ADD_TARGET - Parameterized "function" that adds a new target to the Makefile.
-#   The target may be an executable or a library. The two allowable types of
-#   targets are distinguished based on the name: library targets must end with
-#   the traditional ".a" extension.
-#
-#   USE WITH EVAL
-#
-define ADD_TARGET
+define ADD_TARGET_RULE
     ifeq "$$(suffix ${1})" ".a"
         # Add a target for creating a static library.
         ${1}: $${${1}_OBJS}
@@ -78,9 +79,9 @@ endef
 #   subdirectories of the top-level directory, the canonical form is relative
 #   to the root of the filesystem (i.e. it will start with "/").
 define CANONICAL_PATH
-    $(patsubst ${CURDIR}/%,%,\
-      $(foreach PATH,${1},\
-        $(shell readlink -m ${PATH})))
+$(patsubst ${CURDIR}/%,%,\
+  $(foreach PATH,${1},\
+    $(shell readlink -m ${PATH})))
 endef
 
 # COMPILE_C_CMDS - Commands for compiling C source code.
@@ -107,13 +108,13 @@ define COMPILE_CXX_CMDS
 	 rm -f ${BUILD_DIR}/$*.d
 endef
 
-# INCLUDE_MK - Parameterized "function" that includes a new makefile fragment
-#   into the overall makefile. It also recursively includes all submakefiles of
-#   the specified makefile fragment.
+# INCLUDE_SUBMAKEFILE - Parameterized "function" that includes a new
+#   "submakefile" fragment into the overall Makefile. It also recursively
+#   includes all submakefiles of the specified submakefile fragment.
 #
 #   USE WITH EVAL
 #
-define INCLUDE_MK
+define INCLUDE_SUBMAKEFILE
     # Initialize all variables that can be defined by a makefile fragment, then
     # include the specified makefile fragment.
     TARGET :=
@@ -135,6 +136,7 @@ define INCLUDE_MK
     include ${1}
 
     # Initialize internal local variables.
+    INCS :=
     OBJS :=
 
     # Ensure that valid values are set for BUILD_DIR and TARGET_DIR.
@@ -152,9 +154,9 @@ define INCLUDE_MK
     DIR_STACK := $$(call PUSH,$${DIR_STACK},$${DIR})
     OUT_DIR := $${BUILD_DIR}/$${DIR}
 
-    # Determine which target this makefile's variables apply to. A stack is used
-    # to keep track of which target is the "current" target as we recursively
-    # include other submakefiles.
+    # Determine which target this makefile's variables apply to. A stack is
+    # used to keep track of which target is the "current" target as we
+    # recursively include other submakefiles.
     ifneq "$$(strip $${TARGET})" ""
         # This makefile defined a new target. Target variables defined by this
         # makefile apply to this new target. Initialize the target's variables.
@@ -193,11 +195,13 @@ define INCLUDE_MK
         # Convert the source file names to their corresponding object file
         # names.
         OBJS := $${SOURCES}
-        $$(foreach EXT,$${ALL_SRC_EXTS},$$(eval OBJS := $${OBJS:$${EXT}=%.o}))
+        $$(foreach EXT,$${ALL_SRC_EXTS},\
+           $$(eval OBJS := $${OBJS:$${EXT}=%.o}))
 
         # Add the objects to the current target's list of objects, and create
         # target-specific variables for the objects based on any source
         # variables that were defined.
+        INCS := $$(patsubst %,$${DIR}%,$${SRC_INCDIRS})
         OBJS := $$(patsubst %,$${OUT_DIR}%,$${OBJS})
         $${TGT}_OBJS += $${OBJS}
         $${TGT}_DEPS += $$(patsubst %.o,%.P,$${OBJS})
@@ -205,14 +209,14 @@ define INCLUDE_MK
         $${OBJS}: SRC_CXXFLAGS := $${SRC_CXXFLAGS}
         $${OBJS}: SRC_DEFS := $$(patsubst %,-D%,$${SRC_DEFS})
         $${OBJS}: SRC_INCDIRS := $$(patsubst %,-I%,\
-                                    $$(call CANONICAL_PATH,\
-                                       $$(patsubst %,$${DIR}%,$${SRC_INCDIRS})))
+                                    $$(call CANONICAL_PATH,$${INCS}))
     endif
 
     ifneq "$$(strip $${SUBMAKEFILES})" ""
         # This makefile has submakefiles. Recursively include them.
-        $$(foreach MK,$${SUBMAKEFILES}, \
-            $$(eval $$(call INCLUDE_MK,$$(call CANONICAL_PATH,$${DIR}$${MK}))))
+        $$(foreach MK,$${SUBMAKEFILES},\
+           $$(eval $$(call INCLUDE_SUBMAKEFILE,\
+                      $$(call CANONICAL_PATH,$${DIR}$${MK}))))
     endif
 
     # Reset the "current" target to it's previous value.
@@ -262,20 +266,22 @@ DIR_STACK :=
 INCDIRS :=
 TGT_STACK :=
 
-# Include the main user-supplied makefile. This also recursively includes all
-# user-supplied submakefiles.
-$(eval $(call INCLUDE_MK,main.mk))
+# Include the main user-supplied submakefile. This also recursively includes
+# all other user-supplied submakefiles.
+$(eval $(call INCLUDE_SUBMAKEFILE,main.mk))
 
 # Perform post-processing on global variables as needed.
 DEFS := $(patsubst %,-D%,${DEFS})
 INCDIRS := $(patsubst %,-I%,${INCDIRS})
 
-# Define "all", which simply builds all user-defined targets, as default goal.
+# Define the "all" target (which simply builds all user-defined targets) as the
+# default goal.
 .PHONY: all
 all: ${ALL_TGTS}
 
 # Add a new target rule for each user-defined target.
-$(foreach TGT,${ALL_TGTS},$(eval $(call ADD_TARGET,${TGT})))
+$(foreach TGT,${ALL_TGTS},\
+  $(eval $(call ADD_TARGET_RULE,${TGT})))
 
 # Add pattern rule(s) for creating compiled object code from C source.
 $(foreach EXT,${C_SRC_EXTS},\
@@ -285,9 +291,11 @@ $(foreach EXT,${C_SRC_EXTS},\
 $(foreach EXT,${CXX_SRC_EXTS},\
   $(eval $(call ADD_OBJECT_RULE,${EXT},$${COMPILE_CXX_CMDS})))
 
-# Add "clean" targets to remove all build-generated files.
+# Add "clean" rules to remove all build-generated files.
 .PHONY: clean
-$(foreach TGT,${ALL_TGTS},$(eval $(call ADD_CLEAN_TARGET,${TGT})))
+$(foreach TGT,${ALL_TGTS},\
+  $(eval $(call ADD_CLEAN_RULE,${TGT})))
 
 # Include generated rules that define additional (header) dependencies.
-$(foreach TGT,${ALL_TGTS},$(eval -include ${${TGT}_DEPS}))
+$(foreach TGT,${ALL_TGTS},\
+  $(eval -include ${${TGT}_DEPS}))
