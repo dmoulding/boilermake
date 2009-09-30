@@ -1,17 +1,17 @@
-# This file attempts to document all of variables that can be specified in an
-# easymake (sub)makefile. Of all the variables, the only one that is absolutely
-# required is "TARGET". However, it wouldn't really be useful to only specify
-# "TARGET". Normally, at a minimum, some SOURCES and/or TGT_LDLIBS should also
-# be defined.
+# This file attempts to document all of the variables that can be specified in
+# an easymake submakefile. Of all the variables, the only one that is
+# absolutely required is "TARGET". However, it wouldn't really be useful to
+# only specify "TARGET". Normally, at a minimum, some SOURCES and/or TGT_LDLIBS
+# should also be defined.
 #
 # Many of the variable names begin with "SRC_" or "TGT_". These variables apply
 # to the current list of source files or the current target, respectively.
 #
 # The "current" list of source files is the list of files specified on the
-# "SOURCES" line in the *current* (sub)makefile. The "SRC_*" variables cannot
-# be applied to source files defined in some other (sub)makefile.
+# "SOURCES" line in the *current* submakefile. The "SRC_*" variables cannot be
+# applied to source files defined in some other submakefile.
 #
-# The "current" target could be a "TARGET" defined in the current (sub)makefile,
+# The "current" target could be a "TARGET" defined in the current submakefile,
 # or it could be a "TARGET" defined in some ancestor makefile (see the
 # description of TARGET below for more details).
 
@@ -23,7 +23,7 @@
 #
 #   It is advised to set this variable only once (so that all intermediate
 #   build-generated files are placed under a common directory). Changing this
-#   variable from one (sub)makefile to the next is not recommended (and is not
+#   variable from one submakefile to the next is not recommended (and is not
 #   guaranteed to work properly).
 #
 #   Default value: build
@@ -31,9 +31,9 @@ BUILD_DIR :=
 
 # INCDIRS globally specifies include directories to be searched during source
 #   compilation. These will apply to sources from all submakefiles and for all
-#   targets. These should be specified as just directory names (i.e. they should
-#   not be prefixed with a "-I". The paths should be specified relative to the
-#   root of the project (i.e. the directory from which you run make).
+#   targets. These should be specified as just directory names (i.e. they
+#   should not be prefixed with a "-I". The paths should be specified relative
+#   to the root of the project (i.e. the directory from which you run make).
 #
 #   Default value: <none>
 INCDIRS :=
@@ -48,7 +48,7 @@ DEFS :=
 
 # SOURCES specifies one or more source files that are prerequesites of the
 #   "current" target (the current target may be a target specified in the
-#   same (sub)makefile as the SOURCES variable, or it may be a target specified
+#   same submakefile as the SOURCES variable, or it may be a target specified
 #   in some ancestor makefile).
 #
 #   Currently supported sources are C and C++ sources ending with any of the
@@ -64,7 +64,7 @@ DEFS :=
 SOURCES :=
 
 # SRC_CFLAGS specifies compile flags to be applied to the C sources listed in
-#   the current (sub)makefile only. This can be used to augment the globally
+#   the current submakefile only. This can be used to augment the globally
 #   applied CFLAGS for selected C sources.
 #
 #   For specifying include directories or preprocessor definitions SRC_INCDIRS
@@ -83,22 +83,22 @@ SRC_CFLAGS :=
 SRC_CXXFLAGS :=
 
 # SRC_DEFS specifies preprocessor definitions to be defined during compilation
-#   of sources listed in the current (sub)makefile only. This can be used to
+#   of sources listed in the current submakefile only. This can be used to
 #   augment the globally applied DEFS for selected sources.
 #
 #   Default value: <none>
 SRC_DEFS :=
 
-# SRC_INCDIRS specifies include directories to be searched during compilation of
-#   sources listed in the current (sub)makefile only. This can be used to
-#   augment the globally applied INCDIRS for selected sources. Unlike the global
-#   INCDIRS variable, paths assigned to this variable should be relative to the
-#   *current* (sub)makefile's directory (not the root of the project).
+# SRC_INCDIRS specifies include directories to be searched during compilation
+#   of sources listed in the current submakefile only. This can be used to
+#   augment the globally applied INCDIRS for selected sources. Unlike the
+#   global INCDIRS variable, paths assigned to this variable should be relative
+#   to the *current* submakefile's directory (not the root of the project).
 #
 #   Default value: <none>
 SRC_INCDIRS :=
 
-# SUBMAKEFILES specifies one or more submakefiles of the current (sub)makefile.
+# SUBMAKEFILES specifies one or more submakefiles of the current submakefile.
 #   This allows the construction of a makefile hierarchy, which makes it
 #   possible to define multiple targets with unique sources and compiler/linker
 #   flags.
@@ -106,7 +106,8 @@ SRC_INCDIRS :=
 #   For example, a group of source files that should all be compiled with a
 #   common set of compile flags can be specified in their own submakefile that
 #   specifies the SRC_CFLAGS variable. Or a new target, with its own list of
-#   prerequesites and link-time libraries can be specified in a new submakefile.
+#   prerequesites and link-time libraries can be specified in a new
+#   submakefile.
 #
 #   Default value: <none>
 SUBMAKEFILES :=
@@ -120,17 +121,17 @@ SUBMAKEFILES :=
 #   ".DEFAULT_GOAL", if desired. At least one target must be defined in order
 #   to do anything useful.
 #
-#   The TARGET variable should be specified only *once* anywhere in the makefile
-#   hierarchy for a given target name. Each time the TARGET variable is
-#   specified, the Makefile interprets this to mean that a *new* target is being
-#   defined. No two targets should have the same name.
+#   The TARGET variable should be specified only *once* anywhere in the
+#   makefile hierarchy for a given target name. Each time the TARGET variable
+#   is specified, the Makefile interprets this to mean that a *new* target is
+#   being defined. No two targets should have the same name.
 #
-#   All variables from submakefiles will apply to the "closest" target specified
-#   in the (sub)makefile hierarchy. For example, if a grandparent makefile
-#   specifies a target named "foo" and a parent makefile specifies a target
-#   "bar" while the child makefile does not specify a target, then any sources
-#   or other variables specified in the child makefile will apply to the target
-#   named "bar".
+#   All variables from submakefiles will apply to the "closest" target
+#   specified in the submakefile hierarchy. For example, if a grandparent
+#   makefile specifies a target named "foo" and a parent makefile specifies a
+#   target "bar" while the child makefile does not specify a target, then any
+#   sources or other variables specified in the child makefile will apply to
+#   the target named "bar".
 #
 #   Default value: <none>
 TARGET :=
@@ -162,9 +163,9 @@ TGT_LDFLAGS :=
 #   Default value: <none>
 TGT_LDLIBS :=
 
-# TGT_LINKER specifies the program to be used for linking the target (applies to
-#   executable targets only). If this option is not specified, the Makefile will
-#   attempt to make a reasonable choice based upon the sources that are
+# TGT_LINKER specifies the program to be used for linking the target (applies
+#   to executable targets only). If this option is not specified, the Makefile
+#   will attempt to make a reasonable choice based upon the sources that are
 #   prerequesites of the target (it will choose g++ if there are C++ sources,
 #   otherwise it will choose cc).
 #
@@ -172,8 +173,8 @@ TGT_LDLIBS :=
 TGT_LINKER :=
 
 # TGT_POSTCLEAN specifies one or more actions to be performed after the target
-#   has been cleaned. These should be entered as shell commands (normal GNU Make
-#   processing applies, so you can use make variables in the commands).
+#   has been cleaned. These should be entered as shell commands (normal GNU
+#   Make processing applies, so you can use make variables in the commands).
 #
 #   See TGT_POSTMAKE below for more related information.
 TGT_POSTCLEAN :=
