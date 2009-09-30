@@ -19,7 +19,7 @@ define ADD_CLEAN_RULE
     clean: clean_${1}
     .PHONY: clean_${1}
     clean_${1}:
-	rm -f ${1} $$(patsubst %.o,%.[oP],$${${1}_OBJS})
+	rm -f ${1} $${${1}_OBJS:%.o=%.[oP]}
 	$${${1}_POSTCLEAN}
 endef
 
@@ -168,8 +168,7 @@ define INCLUDE_SUBMAKEFILE
         $${TGT}: TGT_POSTMAKE := $${TGT_POSTMAKE}
         $${TGT}_LINKER := $${TGT_LINKER}
         $${TGT}_POSTCLEAN := $${TGT_POSTCLEAN}
-        $${TGT}_PREREQS := $$(patsubst %,$${TARGET_DIR}/%,$${TGT_PREREQS})
-
+        $${TGT}_PREREQS := $${TGT_PREREQS:%=$${TARGET_DIR}/%}
         $${TGT}_DEPS :=
         $${TGT}_OBJS :=
         $${TGT}_SOURCES :=
@@ -201,13 +200,13 @@ define INCLUDE_SUBMAKEFILE
         # Add the objects to the current target's list of objects, and create
         # target-specific variables for the objects based on any source
         # variables that were defined.
-        INCS := $$(patsubst %,$${DIR}%,$${SRC_INCDIRS})
-        OBJS := $$(patsubst %,$${OUT_DIR}%,$${OBJS})
+        INCS := $${SRC_INCDIRS:%=$${DIR}%}
+        OBJS := $${OBJS:%=$${OUT_DIR}%}
         $${TGT}_OBJS += $${OBJS}
-        $${TGT}_DEPS += $$(patsubst %.o,%.P,$${OBJS})
+        $${TGT}_DEPS += $${OBJS:%.o=%.P}
         $${OBJS}: SRC_CFLAGS := $${SRC_CFLAGS}
         $${OBJS}: SRC_CXXFLAGS := $${SRC_CXXFLAGS}
-        $${OBJS}: SRC_DEFS := $$(patsubst %,-D%,$${SRC_DEFS})
+        $${OBJS}: SRC_DEFS := $${SRC_DEFS:%=-D%}
         $${OBJS}: SRC_INCDIRS := $$(patsubst %,-I%,\
                                     $$(call CANONICAL_PATH,$${INCS}))
     endif
@@ -239,13 +238,13 @@ endef
 #   colon-delimited stack, and results in the new value of the stack. Note that
 #   the popped value cannot be obtained using this function; use peek for that.
 define POP
-$(patsubst %:$(lastword $(subst :, ,${1})),%,${1})
+${1:%:$(lastword $(subst :, ,${1}))=%}
 endef
 
 # PUSH - Parameterized "function" that pushes a value onto the specified colon-
 #   delimited stack, and results in the new value of the stack.
 define PUSH
-$(patsubst %,${1}:%,${2})
+${2:%=${1}:%}
 endef
 
 ###############################################################################
@@ -271,8 +270,8 @@ TGT_STACK :=
 $(eval $(call INCLUDE_SUBMAKEFILE,main.mk))
 
 # Perform post-processing on global variables as needed.
-DEFS := $(patsubst %,-D%,${DEFS})
-INCDIRS := $(patsubst %,-I%,${INCDIRS})
+DEFS := ${DEFS:%=-D%}
+INCDIRS := ${INCDIRS:%=-I%}
 
 # Define the "all" target (which simply builds all user-defined targets) as the
 # default goal.
