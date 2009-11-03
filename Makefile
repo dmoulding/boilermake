@@ -80,8 +80,7 @@ endef
 #   to the root of the filesystem (i.e. it will start with "/").
 define CANONICAL_PATH
 $(patsubst ${CURDIR}/%,%,\
-  $(foreach PATH,${1},\
-    $(shell readlink -m ${PATH})))
+  $(realpath ${1}))
 endef
 
 # COMPILE_C_CMDS - Commands for compiling C source code.
@@ -150,9 +149,8 @@ define INCLUDE_SUBMAKEFILE
     # A directory stack is maintained so that the correct paths are used as we
     # recursively include all submakefiles. Get the makefile's directory and
     # push it onto the stack.
-    DIR := $(patsubst ./%,%,$(dir ${1}))
+    DIR := $(call CANONICAL_PATH,$(dir ${1}))
     DIR_STACK := $$(call PUSH,$${DIR_STACK},$${DIR})
-    OUT_DIR := $${BUILD_DIR}/$${DIR}
 
     # Determine which target this makefile's variables apply to. A stack is
     # used to keep track of which target is the "current" target as we
@@ -168,7 +166,7 @@ define INCLUDE_SUBMAKEFILE
         $${TGT}: TGT_POSTMAKE := $${TGT_POSTMAKE}
         $${TGT}_LINKER := $${TGT_LINKER}
         $${TGT}_POSTCLEAN := $${TGT_POSTCLEAN}
-        $${TGT}_PREREQS := $${TGT_PREREQS:%=$${TARGET_DIR}/%}
+        $${TGT}_PREREQS := $$(addprefix $${TARGET_DIR}/,$${TGT_PREREQS})
         $${TGT}_DEPS :=
         $${TGT}_OBJS :=
         $${TGT}_SOURCES :=
@@ -188,34 +186,32 @@ define INCLUDE_SUBMAKEFILE
         ifneq "$${BAD_SRCS}" ""
             $$(error Unsupported source file(s) found in ${1} [$${BAD_SRCS}])
         endif
-        SOURCES := $$(call CANONICAL_PATH,$${SOURCES})
+        SOURCES := $$(call CANONICAL_PATH,$$(addprefix $${DIR}/,$${SOURCES}))
         $${TGT}_SOURCES += $${SOURCES}
 
         # Convert the source file names to their corresponding object file
         # names.
-        OBJS := $${SOURCES}
-        $$(foreach EXT,$${ALL_SRC_EXTS},\
-           $$(eval OBJS := $${OBJS:$${EXT}=%.o}))
+        OBJS := $$(addprefix $${BUILD_DIR}/,\
+                   $$(addsuffix .o,$$(basename $${SOURCES})))
 
         # Add the objects to the current target's list of objects, and create
         # target-specific variables for the objects based on any source
         # variables that were defined.
-        INCS := $${SRC_INCDIRS:%=$${DIR}%}
-        OBJS := $${OBJS:%=$${OUT_DIR}%}
         $${TGT}_OBJS += $${OBJS}
         $${TGT}_DEPS += $${OBJS:%.o=%.P}
         $${OBJS}: SRC_CFLAGS := $${SRC_CFLAGS}
         $${OBJS}: SRC_CXXFLAGS := $${SRC_CXXFLAGS}
-        $${OBJS}: SRC_DEFS := $${SRC_DEFS:%=-D%}
-        $${OBJS}: SRC_INCDIRS := $$(patsubst %,-I%,\
-                                    $$(call CANONICAL_PATH,$${INCS}))
+        $${OBJS}: SRC_DEFS := $$(addprefix -D,$${SRC_DEFS})
+        $${OBJS}: SRC_INCDIRS := $$(addprefix -I,\
+                                    $$(call CANONICAL_PATH,\
+                                       $$(addprefix $${DIR}/,$${SRC_INCDIRS})))
     endif
 
     ifneq "$$(strip $${SUBMAKEFILES})" ""
         # This makefile has submakefiles. Recursively include them.
         $$(foreach MK,$${SUBMAKEFILES},\
            $$(eval $$(call INCLUDE_SUBMAKEFILE,\
-                      $$(call CANONICAL_PATH,$${DIR}$${MK}))))
+                      $$(call CANONICAL_PATH,$${DIR}/$${MK}))))
     endif
 
     # Reset the "current" target to it's previous value.
@@ -225,7 +221,6 @@ define INCLUDE_SUBMAKEFILE
     # Reset the "current" directory to it's previous value.
     DIR_STACK := $$(call POP,$${DIR_STACK})
     DIR := $$(call PEEK,$${DIR_STACK})
-    OUT_DIR := $${BUILD_DIR}/$${DIR}
 endef
 
 # PEEK - Parameterized "function" that results in the value at the top of the
@@ -270,8 +265,8 @@ TGT_STACK :=
 $(eval $(call INCLUDE_SUBMAKEFILE,main.mk))
 
 # Perform post-processing on global variables as needed.
-DEFS := ${DEFS:%=-D%}
-INCDIRS := ${INCDIRS:%=-I%}
+DEFS := $(addprefix -D,${DEFS})
+INCDIRS := $(addprefix -I,$(call CANONICAL_PATH,${INCDIRS}))
 
 # Define the "all" target (which simply builds all user-defined targets) as the
 # default goal.
