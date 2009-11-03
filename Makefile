@@ -1,4 +1,4 @@
-# A reusable, but flexible, Makefile framework.
+# boilermake: A reusable, but flexible, boilerplate Makefile.
 #
 # Author: Dan Moulding <dmoulding@gmail.com> (2008)
 
@@ -79,8 +79,7 @@ endef
 #   subdirectories of the top-level directory, the canonical form is relative
 #   to the root of the filesystem (i.e. it will start with "/").
 define CANONICAL_PATH
-$(patsubst ${CURDIR}/%,%,\
-  $(realpath ${1}))
+$(patsubst ${CURDIR}/%,%, $(realpath ${1}))
 endef
 
 # COMPILE_C_CMDS - Commands for compiling C source code.
@@ -135,7 +134,6 @@ define INCLUDE_SUBMAKEFILE
     include ${1}
 
     # Initialize internal local variables.
-    INCS :=
     OBJS :=
 
     # Ensure that valid values are set for BUILD_DIR and TARGET_DIR.

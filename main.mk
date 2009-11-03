@@ -1,5 +1,5 @@
 # This file attempts to document all of the variables that can be specified in
-# an easymake submakefile. Of all the variables, the only one that is
+# an boilermake submakefile. Of all the variables, the only one that is
 # absolutely required is "TARGET". However, it wouldn't really be useful to
 # only specify "TARGET". Normally, at a minimum, some SOURCES and/or TGT_LDLIBS
 # should also be defined.
