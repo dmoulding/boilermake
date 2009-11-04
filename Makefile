@@ -268,7 +268,6 @@ ALL_SRC_EXTS := ${C_SRC_EXTS} ${CXX_SRC_EXTS}
 # Initialize global variables.
 ALL_TGTS :=
 DEFS :=
-DIR :=
 DIR_STACK :=
 INCDIRS :=
 TGT_STACK :=
