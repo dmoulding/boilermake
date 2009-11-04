@@ -73,13 +73,14 @@ define ADD_TARGET_RULE
     endif
 endef
 
-# CANONICAL_PATH - For the given pathnames, converts them to the canonical form
-#   relative to the top-level directory (the directory from which "make" was
-#   invoked). This removes "./" and "../" sequences. For paths that are not
-#   subdirectories of the top-level directory, the canonical form is relative
-#   to the root of the filesystem (i.e. it will start with "/").
+# CANONICAL_PATH - Given one or more paths, converts the paths to the canonical
+#   form. The canonical form is the path, relative to the project's top-level
+#   directory (the directory from which "make" is run), and without
+#   any "./" or "../" sequences. For paths that are not  located below the
+#   top-level directory, the canonical form is the absolute path (i.e. from
+#   the root of the filesystem) also without "./" or "../" sequences.
 define CANONICAL_PATH
-$(patsubst ${CURDIR}/%,%, $(realpath ${1}))
+$(patsubst ${CURDIR}/%,%,$(abspath ${1}))
 endef
 
 # COMPILE_C_CMDS - Commands for compiling C source code.
@@ -184,7 +185,14 @@ define INCLUDE_SUBMAKEFILE
         ifneq "$${BAD_SRCS}" ""
             $$(error Unsupported source file(s) found in ${1} [$${BAD_SRCS}])
         endif
-        SOURCES := $$(call CANONICAL_PATH,$$(addprefix $${DIR}/,$${SOURCES}))
+
+        # Qualify and canonicalize paths.
+        SOURCES     := $$(call QUALIFY_PATH,$${DIR},$${SOURCES})
+        SOURCES     := $$(call CANONICAL_PATH,$${SOURCES})
+        SRC_INCDIRS := $$(call QUALIFY_PATH,$${DIR},$${SRC_INCDIRS})
+        SRC_INCDIRS := $$(call CANONICAL_PATH,$${SRC_INCDIRS})
+
+        # Save the list of source files for this target.
         $${TGT}_SOURCES += $${SOURCES}
 
         # Convert the source file names to their corresponding object file
@@ -200,16 +208,15 @@ define INCLUDE_SUBMAKEFILE
         $${OBJS}: SRC_CFLAGS := $${SRC_CFLAGS}
         $${OBJS}: SRC_CXXFLAGS := $${SRC_CXXFLAGS}
         $${OBJS}: SRC_DEFS := $$(addprefix -D,$${SRC_DEFS})
-        $${OBJS}: SRC_INCDIRS := $$(addprefix -I,\
-                                    $$(call CANONICAL_PATH,\
-                                       $$(addprefix $${DIR}/,$${SRC_INCDIRS})))
+        $${OBJS}: SRC_INCDIRS := $$(addprefix -I,$${SRC_INCDIRS})
     endif
 
     ifneq "$$(strip $${SUBMAKEFILES})" ""
         # This makefile has submakefiles. Recursively include them.
         $$(foreach MK,$${SUBMAKEFILES},\
            $$(eval $$(call INCLUDE_SUBMAKEFILE,\
-                      $$(call CANONICAL_PATH,$${DIR}/$${MK}))))
+                      $$(call CANONICAL_PATH,\
+                         $$(call QUALIFY_PATH,$${DIR},$${MK})))))
     endif
 
     # Reset the "current" target to it's previous value.
@@ -240,6 +247,13 @@ define PUSH
 ${2:%=${1}:%}
 endef
 
+# QUALIFY_PATH - Given a "root" directory and one or more paths, qualifies the
+#   paths using the "root" directory (i.e. appends to the root directory name
+#   to the paths) except for paths that are absolute.
+define QUALIFY_PATH
+$(addprefix ${1}/,$(filter-out /%,${2})) $(filter /%,${2})
+endef
+
 ###############################################################################
 #
 # Start of Makefile Evaluation
@@ -254,6 +268,7 @@ ALL_SRC_EXTS := ${C_SRC_EXTS} ${CXX_SRC_EXTS}
 # Initialize global variables.
 ALL_TGTS :=
 DEFS :=
+DIR :=
 DIR_STACK :=
 INCDIRS :=
 TGT_STACK :=
