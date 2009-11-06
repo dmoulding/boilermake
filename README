@@ -25,6 +25,14 @@ builds. Even with this simple example, "#include" dependencies are
 automatically generated, a "clean" rule is generated, and all intermediate (.o)
 files are output under a directory named "build".
 
+Boilermake Variables
+--------------------
+The previous example illustrated the use of a couple of boilermake's special
+variables: TARGET and SOURCES. Boilermake has many other special variables
+that can be used in your main.mk (or other submakefiles). All of the special
+variables that boilermake uses are documented in the MANUAL file distributed
+with boilermake. See that file for information about each variable's purpose.
+
 Submakefiles
 ------------
 In addition to main.mk, you can also create other "submakefiles" to modularize
