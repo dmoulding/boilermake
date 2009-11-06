@@ -24,7 +24,7 @@ define ADD_CLEAN_RULE
     clean: clean_${1}
     .PHONY: clean_${1}
     clean_${1}:
-	rm -f ${1} $${${1}_OBJS:%.o=%.[oP]}
+	$$(strip rm -f ${1} $${${1}_OBJS:%.o=%.[oP]})
 	$${${1}_POSTCLEAN}
 endef
 
@@ -51,7 +51,7 @@ define ADD_TARGET_RULE
         # Add a target for creating a static library.
         ${1}: $${${1}_OBJS}
 	    @mkdir -p $$(dir $$@)
-	    $${AR} $${ARFLAGS} ${1} $${${1}_OBJS}
+	    $$(strip $${AR} $${ARFLAGS} ${1} $${${1}_OBJS})
 	    $${TGT_POSTMAKE}
     else
         # Add a target for linking an executable. First, attempt to select the
@@ -72,8 +72,8 @@ define ADD_TARGET_RULE
 
         ${1}: $${${1}_OBJS} $${${1}_PREREQS}
 	    @mkdir -p $$(dir $$@)
-	    $${TGT_LINKER} -o ${1} $${TGT_LDFLAGS} $${LDFLAGS} $${${1}_OBJS} \
-	        $${LDLIBS} $${TGT_LDLIBS}
+	    $$(strip $${TGT_LINKER} -o ${1} $${TGT_LDFLAGS} $${LDFLAGS} \
+	        $${${1}_OBJS} $${LDLIBS} $${TGT_LDLIBS})
 	    $${TGT_POSTMAKE}
     endif
 endef
@@ -91,8 +91,8 @@ endef
 # COMPILE_C_CMDS - Commands for compiling C source code.
 define COMPILE_C_CMDS
 	@mkdir -p $(dir $@)
-	${CC} -o $@ -c -MD ${SRC_CFLAGS} ${CFLAGS} ${INCDIRS} ${SRC_INCDIRS} \
-	    ${SRC_DEFS} ${DEFS} $<
+	$(strip ${CC} -o $@ -c -MD ${SRC_CFLAGS} ${CFLAGS} ${INCDIRS} \
+	    ${SRC_INCDIRS} ${SRC_DEFS} ${DEFS} $<)
 	@cp ${BUILD_DIR}/$*.d ${BUILD_DIR}/$*.P; \
 	 sed -e 's/#.*//' -e 's/^[^:]*: *//' -e 's/ *\\$$//' \
 	     -e '/^$$/ d' -e 's/$$/ :/' < ${BUILD_DIR}/$*.d \
@@ -103,8 +103,8 @@ endef
 # COMPILE_CXX_CMDS - Commands for compiling C++ source code.
 define COMPILE_CXX_CMDS
 	@mkdir -p $(dir $@)
-	${CXX} -o $@ -c -MD ${SRC_CXXFLAGS} ${CXXFLAGS} ${INCDIRS} \
-	    ${SRC_INCDIRS} ${SRC_DEFS} ${DEFS} $<
+	$(strip ${CXX} -o $@ -c -MD ${SRC_CXXFLAGS} ${CXXFLAGS} ${INCDIRS} \
+	    ${SRC_INCDIRS} ${SRC_DEFS} ${DEFS} $<)
 	@cp ${BUILD_DIR}/$*.d ${BUILD_DIR}/$*.P; \
 	 sed -e 's/#.*//' -e 's/^[^:]*: *//' -e 's/ *\\$$//' \
 	     -e '/^$$/ d' -e 's/$$/ :/' < ${BUILD_DIR}/$*.d \
