@@ -1,5 +1,5 @@
 # This file attempts to document all of the variables that can be specified in
-# an boilermake submakefile. Of all the variables, the only one that is
+# a boilermake submakefile. Of all the variables, the only one that is
 # absolutely required is "TARGET". However, it wouldn't really be useful to
 # only specify "TARGET". Normally, at a minimum, some SOURCES and/or TGT_LDLIBS
 # should also be defined.
@@ -32,7 +32,7 @@ BUILD_DIR :=
 # INCDIRS globally specifies include directories to be searched during source
 #   compilation. These will apply to sources from all submakefiles and for all
 #   targets. These should be specified as just directory names (i.e. they
-#   should not be prefixed with a "-I". The paths should be specified relative
+#   should not be prefixed with a "-I"). The paths should be specified relative
 #   to the root of the project (i.e. the directory from which you run make).
 #
 #   Default value: <none>
