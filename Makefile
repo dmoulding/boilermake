@@ -248,8 +248,8 @@ ${2:%=${1}:%}
 endef
 
 # QUALIFY_PATH - Given a "root" directory and one or more paths, qualifies the
-#   paths using the "root" directory (i.e. appends to the root directory name
-#   to the paths) except for paths that are absolute.
+#   paths using the "root" directory (i.e. appends the root directory name to
+#   the paths) except for paths that are absolute.
 define QUALIFY_PATH
 $(addprefix ${1}/,$(filter-out /%,${2})) $(filter /%,${2})
 endef
