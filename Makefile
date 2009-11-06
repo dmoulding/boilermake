@@ -2,6 +2,11 @@
 #
 # Author: Dan Moulding <dmoulding@gmail.com> (2008)
 
+# Caution: Don't edit this Makefile! Create your own main.mk and other
+#          submakefiles, which will be included by this Makefile.
+#          Only edit this if you need to modify boilermake's behavior (fix
+#          bugs, add features, etc).
+
 # Note: Parameterized "functions" in this makefile that are marked with
 #       "USE WITH EVAL" are only useful in conjuction with eval. This is
 #       because those functions result in a block of Makefile syntax that must
