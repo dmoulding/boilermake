@@ -53,8 +53,8 @@ otherwise the target will be built as an executable.
 
 Submakefiles are Makefiles
 --------------------------
-Submakefiles are processed as normal GNU Makefiles, so all the GNU syntax and
-processing rules apply. You can create variables of your own. You can use
+Submakefiles are processed as normal GNU Makefiles, so all the GNU Make syntax
+and processing rules apply. You can create variables of your own. You can use
 conditional logic. Anything you can do in a normal GNU Makefile, you can do in
 your submakefiles. You can get really advanced and define your own targets
 without using the boilermake TARGET variable. The key thing is that boilermake
