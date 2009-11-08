@@ -72,7 +72,7 @@ define ADD_TARGET_RULE
 
         ${1}: $${${1}_OBJS} $${${1}_PREREQS}
 	    @mkdir -p $$(dir $$@)
-	    $$(strip $${TGT_LINKER} -o ${1} $${TGT_LDFLAGS} $${LDFLAGS} \
+	    $$(strip $${TGT_LINKER} -o ${1} $${LDFLAGS} $${TGT_LDFLAGS} \
 	        $${${1}_OBJS} $${LDLIBS} $${TGT_LDLIBS})
 	    $${TGT_POSTMAKE}
     endif
@@ -91,7 +91,7 @@ endef
 # COMPILE_C_CMDS - Commands for compiling C source code.
 define COMPILE_C_CMDS
 	@mkdir -p $(dir $@)
-	$(strip ${CC} -o $@ -c -MD ${SRC_CFLAGS} ${CFLAGS} ${INCDIRS} \
+	$(strip ${CC} -o $@ -c -MD ${CFLAGS} ${SRC_CFLAGS} ${INCDIRS} \
 	    ${SRC_INCDIRS} ${SRC_DEFS} ${DEFS} $<)
 	@cp ${BUILD_DIR}/$*.d ${BUILD_DIR}/$*.P; \
 	 sed -e 's/#.*//' -e 's/^[^:]*: *//' -e 's/ *\\$$//' \
@@ -103,7 +103,7 @@ endef
 # COMPILE_CXX_CMDS - Commands for compiling C++ source code.
 define COMPILE_CXX_CMDS
 	@mkdir -p $(dir $@)
-	$(strip ${CXX} -o $@ -c -MD ${SRC_CXXFLAGS} ${CXXFLAGS} ${INCDIRS} \
+	$(strip ${CXX} -o $@ -c -MD ${CXXFLAGS} ${SRC_CXXFLAGS} ${INCDIRS} \
 	    ${SRC_INCDIRS} ${SRC_DEFS} ${DEFS} $<)
 	@cp ${BUILD_DIR}/$*.d ${BUILD_DIR}/$*.P; \
 	 sed -e 's/#.*//' -e 's/^[^:]*: *//' -e 's/ *\\$$//' \

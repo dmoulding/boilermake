@@ -76,14 +76,15 @@ SRC_CFLAGS
 ----------
    Specifies compile flags to be applied to the C sources listed in the current
    submakefile only. This can be used to augment the globally applied CFLAGS
-   for selected C sources.
+   for selected C sources. Note that flags specified here can *override* flags
+   specified in CFLAGS. For instance, if a small subset of C source files
+   *must* be compiled with "-std=c99", then setting SRC_CFLAGS to "-std=c99"
+   will ensure that the "-std=c99" flag is used at compilation time for those
+   sources, even if "CFLAGS=-ansi" is specified on the "make" command line.
 
-   For specifying include directories or preprocessor definitions SRC_INCDIRS
+   For specifying include directories or preprocessor definitions, SRC_INCDIRS
    and SRC_DEFS (or their global equivalents, INCDIRS and DEFS) can often be
-   more convenient (you don't need to type all those extra "-I"s or "-D"s).
-
-   Examples of flags that are often specified here include "-pthread" and the
-   "-std=xxx" flags.
+   more convenient.
 
 SRC_CXXFLAGS
 ------------
@@ -149,9 +150,8 @@ TARGET_DIR
 TGT_LDFLAGS
 -----------
    Specifies flags that should be passed to the linker when linking the target.
-   The LDFLAGS variable can be used (e.g. from the command line) to override
-   flags specified here (i.e. these flags are specified first, followed by
-   LDFLAGS).
+   Flags specified with this variable can *override* flags specified with
+   LDFLAGS, in the same way that SRC_CFLAGS can override CFLAGS.
 
    Examples of flags that are often specified here include "-L" and "-shared".
 
