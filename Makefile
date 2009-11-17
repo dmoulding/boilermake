@@ -24,7 +24,7 @@ define ADD_CLEAN_RULE
     clean: clean_${1}
     .PHONY: clean_${1}
     clean_${1}:
-	$$(strip rm -f ${1} $${${1}_OBJS:%.o=%.[oP]})
+	$$(strip rm -f ${1} $${${1}_OBJS:%.o=%.[doP]})
 	$${${1}_POSTCLEAN}
 endef
 
