@@ -137,6 +137,12 @@ define INCLUDE_SUBMAKEFILE
 
     SUBMAKEFILES :=
 
+    # A directory stack is maintained so that the correct paths are used as we
+    # recursively include all submakefiles. Get the makefile's directory and
+    # push it onto the stack.
+    DIR := $(call CANONICAL_PATH,$(dir ${1}))
+    DIR_STACK := $$(call PUSH,$${DIR_STACK},$${DIR})
+
     include ${1}
 
     # Initialize internal local variables.
@@ -149,12 +155,6 @@ define INCLUDE_SUBMAKEFILE
     ifeq "$$(strip $${TARGET_DIR})" ""
         TARGET_DIR := .
     endif
-
-    # A directory stack is maintained so that the correct paths are used as we
-    # recursively include all submakefiles. Get the makefile's directory and
-    # push it onto the stack.
-    DIR := $(call CANONICAL_PATH,$(dir ${1}))
-    DIR_STACK := $$(call PUSH,$${DIR_STACK},$${DIR})
 
     # Determine which target this makefile's variables apply to. A stack is
     # used to keep track of which target is the "current" target as we
