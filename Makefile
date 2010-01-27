@@ -7,6 +7,16 @@
 #          Only edit this if you need to modify boilermake's behavior (fix
 #          bugs, add features, etc).
 
+# Older versions og GNU Make lack capabilities needed by this system.
+# Instead, running "make" returns "nothing to do".  In order to tell
+# the user what really happened, we check the version of GNU make.
+#
+gnu_need := 3.81
+gnu_ok := $(filter $(gnu_need),$(firstword $(sort $(MAKE_VERSION) $(gnu_need))))
+ifeq ($(gnu_ok),)
+$(error Your version of GNU Make is too old.  We need at least $(gnu_need))
+endif
+
 # Note: Parameterized "functions" in this makefile that are marked with
 #       "USE WITH EVAL" are only useful in conjuction with eval. This is
 #       because those functions result in a block of Makefile syntax that must
