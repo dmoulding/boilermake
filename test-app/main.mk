@@ -1,5 +1,3 @@
 CXXFLAGS := -g -O0 -Wall -pipe
-INCDIRS  := animals
-LDFLAGS  := -L.
 
-SUBMAKEFILES := talk.mk
+SUBMAKEFILES := talk.mk animals/animals.mk
