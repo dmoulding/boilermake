@@ -7,16 +7,6 @@
 #          Only edit this if you need to modify boilermake's behavior (fix
 #          bugs, add features, etc).
 
-# Older versions og GNU Make lack capabilities needed by this system.
-# Instead, running "make" returns "nothing to do".  In order to tell
-# the user what really happened, we check the version of GNU make.
-#
-gnu_need := 3.81
-gnu_ok := $(filter $(gnu_need),$(firstword $(sort $(MAKE_VERSION) $(gnu_need))))
-ifeq ($(gnu_ok),)
-$(error Your version of GNU Make is too old.  We need at least $(gnu_need))
-endif
-
 # Note: Parameterized "functions" in this makefile that are marked with
 #       "USE WITH EVAL" are only useful in conjuction with eval. This is
 #       because those functions result in a block of Makefile syntax that must
@@ -243,6 +233,12 @@ define INCLUDE_SUBMAKEFILE
     DIR := $$(call PEEK,$${DIR_STACK})
 endef
 
+# MIN - Parameterized "function" that results in the minimum lexical value of
+#   the two values given.
+define MIN
+$(firstword $(sort ${1} ${2}))
+endef
+
 # PEEK - Parameterized "function" that results in the value at the top of the
 #   specified colon-delimited stack.
 define PEEK
@@ -274,6 +270,16 @@ endef
 # Start of Makefile Evaluation
 #
 ###############################################################################
+
+# Older versions of GNU Make lack capabilities needed by boilermake.
+# With older versions, "make" may simply output "nothing to do", likely leading
+# to confusion. To avoid this, check the version of GNU make up-front and
+# inform the user if their version of make doesn't meet the minimum required.
+MIN_MAKE_VERSION := 3.81
+ifneq "${MIN_MAKE_VERSION}" "$(call MIN,${MIN_MAKE_VERSION},${MAKE_VERSION})"
+    $(info This is GNU Make version ${MAKE_VERSION})
+    $(error boilermake requires GNU Make ${MIN_MAKE_VERSION} or greater.)
+endif
 
 # Define the source file extensions that we know how to handle.
 C_SRC_EXTS := %.c

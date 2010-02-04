@@ -6,8 +6,8 @@ Boilermake is a reusable GNU Make compatible Makefile. It uses a non-recursive
 strategy which avoids the many well-known pitfalls of recursive make.
 Currently, boilermake only knows how to build C and C++ programs.
 
-It requires version 3.81 or later of GNU Make, as earlier versions
-lack the functionality required by Boilermake.
+Boilermake requires GNU Make version 3.81 or later. Earlier versions of GNU Make
+lack some required functionality.
 
 Using Boilermake
 ----------------
