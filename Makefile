@@ -276,9 +276,14 @@ endef
 # to confusion. To avoid this, check the version of GNU make up-front and
 # inform the user if their version of make doesn't meet the minimum required.
 MIN_MAKE_VERSION := 3.81
+MIN_MAKE_VER_MSG := boilermake requires GNU Make ${MIN_MAKE_VERSION} or greater
+ifeq "${MAKE_VERSION}" ""
+    $(info GNU Make not detected)
+    $(error ${MIN_MAKE_VER_MSG})
+endif
 ifneq "${MIN_MAKE_VERSION}" "$(call MIN,${MIN_MAKE_VERSION},${MAKE_VERSION})"
     $(info This is GNU Make version ${MAKE_VERSION})
-    $(error boilermake requires GNU Make ${MIN_MAKE_VERSION} or greater.)
+    $(error ${MIN_MAKE_VER_MSG})
 endif
 
 # Define the source file extensions that we know how to handle.
