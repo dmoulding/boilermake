@@ -65,7 +65,7 @@ define ADD_TARGET_RULE
         ${1}: $${${1}_OBJS}
 	    @mkdir -p $$(dir $$@)
 	    $$(strip $${AR} $${ARFLAGS} ${1} $${${1}_OBJS})
-	    $${TGT_POSTMAKE}
+	    $${${1}_POSTMAKE}
     else
         # Add a target for linking an executable. First, attempt to select the
         # appropriate front-end to use for linking. This might not choose the
@@ -77,17 +77,17 @@ define ADD_TARGET_RULE
             # there are any C++ sources for this target, use the C++ compiler.
             # For all other targets, default to using the C compiler.
             ifneq "$$(strip $$(filter $${CXX_SRC_EXTS},$${${1}_SOURCES}))" ""
-                ${1}: TGT_LINKER = $${CXX}
+                ${1}_LINKER = $${CXX}
             else
-                ${1}: TGT_LINKER = $${CC}
+                ${1}_LINKER = $${CC}
             endif
         endif
 
         ${1}: $${${1}_OBJS} $${${1}_PREREQS}
 	    @mkdir -p $$(dir $$@)
-	    $$(strip $${TGT_LINKER} -o ${1} $${LDFLAGS} $${TGT_LDFLAGS} \
-	        $${${1}_OBJS} $${LDLIBS} $${TGT_LDLIBS})
-	    $${TGT_POSTMAKE}
+	    $$(strip $${${1}_LINKER} -o ${1} $${LDFLAGS} $${${1}_LDFLAGS} \
+	        $${${1}_OBJS} $${LDLIBS} $${${1}_LDLIBS})
+	    $${${1}_POSTMAKE}
     endif
 endef
 
@@ -177,16 +177,15 @@ define INCLUDE_SUBMAKEFILE
         # makefile apply to this new target. Initialize the target's variables.
         TGT := $$(strip $${TARGET_DIR}/$${TARGET})
         ALL_TGTS += $${TGT}
-        $${TGT}: TGT_LDFLAGS := $${TGT_LDFLAGS}
-        $${TGT}: TGT_LDLIBS := $${TGT_LDLIBS}
-        $${TGT}: TGT_LINKER := $${TGT_LINKER}
-        $${TGT}: TGT_POSTMAKE := $${TGT_POSTMAKE}
-        $${TGT}_LINKER := $${TGT_LINKER}
+        $${TGT}_DEPS      :=
+        $${TGT}_LDFLAGS   := $${TGT_LDFLAGS}
+        $${TGT}_LDLIBS    := $${TGT_LDLIBS}
+        $${TGT}_LINKER    := $${TGT_LINKER}
+        $${TGT}_OBJS      :=
         $${TGT}_POSTCLEAN := $${TGT_POSTCLEAN}
-        $${TGT}_PREREQS := $$(addprefix $${TARGET_DIR}/,$${TGT_PREREQS})
-        $${TGT}_DEPS :=
-        $${TGT}_OBJS :=
-        $${TGT}_SOURCES :=
+        $${TGT}_POSTMAKE  := $${TGT_POSTMAKE}
+        $${TGT}_PREREQS   := $$(addprefix $${TARGET_DIR}/,$${TGT_PREREQS})
+        $${TGT}_SOURCES   :=
     else
         # The values defined by this makefile apply to the the "current" target
         # as determined by which target is at the top of the stack.
