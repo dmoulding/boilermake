@@ -190,6 +190,11 @@ define INCLUDE_SUBMAKEFILE
         # The values defined by this makefile apply to the the "current" target
         # as determined by which target is at the top of the stack.
         TGT := $$(strip $$(call PEEK,$${TGT_STACK}))
+        $${TGT}_LDFLAGS   += $${TGT_LDFLAGS}
+        $${TGT}_LDLIBS    += $${TGT_LDLIBS}
+        $${TGT}_POSTCLEAN += $${TGT_POSTCLEAN}
+        $${TGT}_POSTMAKE  += $${TGT_POSTMAKE}
+        $${TGT}_PREREQS   += $${TGT_PREREQS}
     endif
 
     # Push the current target onto the target stack.
