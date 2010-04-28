@@ -41,15 +41,19 @@ define ADD_CLEAN_RULE
 	$${${1}_POSTCLEAN}
 endef
 
-# ADD_OBJECT_RULE - Parameterized "function" that adds a pattern rule, using
-#   the commands from the second argument, for building object files from
-#   source files with the filename extension specified in the first argument.
+# ADD_OBJECT_RULE - Parameterized "function" that adds a pattern rule for
+#   building object files from source files with the filename extension
+#   specified in the second argument. The first argument must be the name of the
+#   base directory where the object files should reside (such that the portion
+#   of the path after the base directory will match the path to corresponding
+#   source files). The third argument must contain the rules used to compile the
+#   source files into object code form.
 #
 #   USE WITH EVAL
 #
 define ADD_OBJECT_RULE
-$${BUILD_DIR}/%.o: ${1}
-	${2}
+${1}/%.o: ${2}
+	${3}
 endef
 
 # ADD_TARGET_RULE - Parameterized "function" that adds a new target to the
@@ -106,11 +110,11 @@ define COMPILE_C_CMDS
 	@mkdir -p $(dir $@)
 	$(strip ${CC} -o $@ -c -MD ${CFLAGS} ${SRC_CFLAGS} ${INCDIRS} \
 	    ${SRC_INCDIRS} ${SRC_DEFS} ${DEFS} $<)
-	@cp ${BUILD_DIR}/$*.d ${BUILD_DIR}/$*.P; \
+	@cp ${@:%$(suffix $@)=%.d} ${@:%$(suffix $@)=%.P}; \
 	 sed -e 's/#.*//' -e 's/^[^:]*: *//' -e 's/ *\\$$//' \
-	     -e '/^$$/ d' -e 's/$$/ :/' < ${BUILD_DIR}/$*.d \
-	     >> ${BUILD_DIR}/$*.P; \
-	 rm -f ${BUILD_DIR}/$*.d
+	     -e '/^$$/ d' -e 's/$$/ :/' < ${@:%$(suffix $@)=%.d} \
+	     >> ${@:%$(suffix $@)=%.P}; \
+	 rm -f ${@:%$(suffix $@)=%.d}
 endef
 
 # COMPILE_CXX_CMDS - Commands for compiling C++ source code.
@@ -118,11 +122,11 @@ define COMPILE_CXX_CMDS
 	@mkdir -p $(dir $@)
 	$(strip ${CXX} -o $@ -c -MD ${CXXFLAGS} ${SRC_CXXFLAGS} ${INCDIRS} \
 	    ${SRC_INCDIRS} ${SRC_DEFS} ${DEFS} $<)
-	@cp ${BUILD_DIR}/$*.d ${BUILD_DIR}/$*.P; \
+	@cp ${@:%$(suffix $@)=%.d} ${@:%$(suffix $@)=%.P}; \
 	 sed -e 's/#.*//' -e 's/^[^:]*: *//' -e 's/ *\\$$//' \
-	     -e '/^$$/ d' -e 's/$$/ :/' < ${BUILD_DIR}/$*.d \
-	     >> ${BUILD_DIR}/$*.P; \
-	 rm -f ${BUILD_DIR}/$*.d
+	     -e '/^$$/ d' -e 's/$$/ :/' < ${@:%$(suffix $@)=%.d} \
+	     >> ${@:%$(suffix $@)=%.P}; \
+	 rm -f ${@:%$(suffix $@)=%.d}
 endef
 
 # INCLUDE_SUBMAKEFILE - Parameterized "function" that includes a new
@@ -219,7 +223,7 @@ define INCLUDE_SUBMAKEFILE
 
         # Convert the source file names to their corresponding object file
         # names.
-        OBJS := $$(addprefix $${BUILD_DIR}/,\
+        OBJS := $$(addprefix $${BUILD_DIR}/$$(call CANONICAL_PATH,$${TGT})/,\
                    $$(addsuffix .o,$$(basename $${SOURCES})))
 
         # Add the objects to the current target's list of objects, and create
@@ -333,12 +337,16 @@ $(foreach TGT,${ALL_TGTS},\
   $(eval $(call ADD_TARGET_RULE,${TGT})))
 
 # Add pattern rule(s) for creating compiled object code from C source.
-$(foreach EXT,${C_SRC_EXTS},\
-  $(eval $(call ADD_OBJECT_RULE,${EXT},$${COMPILE_C_CMDS})))
+$(foreach TGT,${ALL_TGTS},\
+  $(foreach EXT,${C_SRC_EXTS},\
+    $(eval $(call ADD_OBJECT_RULE,${BUILD_DIR}/$(call CANONICAL_PATH,${TGT}),\
+             ${EXT},$${COMPILE_C_CMDS}))))
 
 # Add pattern rule(s) for creating compiled object code from C++ source.
-$(foreach EXT,${CXX_SRC_EXTS},\
-  $(eval $(call ADD_OBJECT_RULE,${EXT},$${COMPILE_CXX_CMDS})))
+$(foreach TGT,${ALL_TGTS},\
+  $(foreach EXT,${CXX_SRC_EXTS},\
+    $(eval $(call ADD_OBJECT_RULE,${BUILD_DIR}/$(call CANONICAL_PATH,${TGT}),\
+             ${EXT},$${COMPILE_CXX_CMDS}))))
 
 # Add "clean" rules to remove all build-generated files.
 .PHONY: clean
