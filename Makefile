@@ -37,7 +37,7 @@ define ADD_CLEAN_RULE
     clean: clean_${1}
     .PHONY: clean_${1}
     clean_${1}:
-	$$(strip rm -f ${1} $${${1}_OBJS:%.o=%.[doP]})
+	$$(strip rm -f ${TARGET_DIR}/${1} $${${1}_OBJS:%.o=%.[doP]})
 	$${${1}_POSTCLEAN}
 endef
 
@@ -66,9 +66,9 @@ endef
 define ADD_TARGET_RULE
     ifeq "$$(suffix ${1})" ".a"
         # Add a target for creating a static library.
-        ${1}: $${${1}_OBJS}
+        $${TARGET_DIR}/${1}: $${${1}_OBJS}
 	    @mkdir -p $$(dir $$@)
-	    $$(strip $${AR} $${ARFLAGS} ${1} $${${1}_OBJS})
+	    $$(strip $${AR} $${ARFLAGS} $$@ $${${1}_OBJS})
 	    $${${1}_POSTMAKE}
     else
         # Add a target for linking an executable. First, attempt to select the
@@ -87,9 +87,9 @@ define ADD_TARGET_RULE
             endif
         endif
 
-        ${1}: $${${1}_OBJS} $${${1}_PREREQS}
+        $${TARGET_DIR}/${1}: $${${1}_OBJS} $${${1}_PREREQS}
 	    @mkdir -p $$(dir $$@)
-	    $$(strip $${${1}_LINKER} -o ${1} $${LDFLAGS} $${${1}_LDFLAGS} \
+	    $$(strip $${${1}_LINKER} -o $$@ $${LDFLAGS} $${${1}_LDFLAGS} \
 	        $${${1}_OBJS} $${LDLIBS} $${${1}_LDLIBS})
 	    $${${1}_POSTMAKE}
     endif
@@ -179,7 +179,7 @@ define INCLUDE_SUBMAKEFILE
     ifneq "$$(strip $${TARGET})" ""
         # This makefile defined a new target. Target variables defined by this
         # makefile apply to this new target. Initialize the target's variables.
-        TGT := $$(strip $${TARGET_DIR}/$${TARGET})
+        TGT := $$(strip $${TARGET})
         ALL_TGTS += $${TGT}
         $${TGT}_DEPS      :=
         $${TGT}_LDFLAGS   := $${TGT_LDFLAGS}
@@ -330,7 +330,7 @@ INCDIRS := $(addprefix -I,$(call CANONICAL_PATH,${INCDIRS}))
 # Define the "all" target (which simply builds all user-defined targets) as the
 # default goal.
 .PHONY: all
-all: ${ALL_TGTS}
+all: $(addprefix ${TARGET_DIR}/,${ALL_TGTS})
 
 # Add a new target rule for each user-defined target.
 $(foreach TGT,${ALL_TGTS},\
