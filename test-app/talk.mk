@@ -1,6 +1,6 @@
 TARGET := talk
 
-TGT_LDFLAGS := -L.
+TGT_LDFLAGS := -L${TARGET_DIR}
 TGT_LDLIBS  := -lanimals
 TGT_PREREQS := libanimals.a
 
