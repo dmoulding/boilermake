@@ -147,6 +147,26 @@ TARGET_DIR
 
    Default value: . (make's working directory; aka project root)
 
+TGT_CFLAGS
+----------
+   Like SRC_CFLAGS, but applies to all sources belonging to the current target,
+   not just sources in the current submakefile.
+
+TGT_CXXFLAGS
+------------
+   Like SRC_CXXFLAGS, but applies to all sources belonging to the current
+   target, not just sources in the current submakefile.
+
+TGT_DEFS
+--------
+   Like SRC_DEFS, but applies to all sources belonging to the current target,
+   not just sources in the current submakefile.
+
+TGT_INCDIRS
+-----------
+   Like SRC_INCDIRS, but applies to all sources belonging to the current target,
+   not just sources in the current submakefile.
+
 TGT_LDFLAGS
 -----------
    Specifies flags that should be passed to the linker when linking the target.

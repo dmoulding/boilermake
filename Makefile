@@ -138,21 +138,25 @@ endef
 define INCLUDE_SUBMAKEFILE
     # Initialize all variables that can be defined by a makefile fragment, then
     # include the specified makefile fragment.
-    TARGET :=
-    TGT_LDFLAGS :=
-    TGT_LDLIBS :=
-    TGT_LINKER :=
+    TARGET        :=
+    TGT_CFLAGS    :=
+    TGT_CXXFLAGS  :=
+    TGT_DEFS      :=
+    TGT_INCDIRS   :=
+    TGT_LDFLAGS   :=
+    TGT_LDLIBS    :=
+    TGT_LINKER    :=
     TGT_POSTCLEAN :=
-    TGT_POSTMAKE :=
-    TGT_PREREQS :=
+    TGT_POSTMAKE  :=
+    TGT_PREREQS   :=
 
-    SOURCES :=
-    SRC_CFLAGS :=
-    SRC_CXXFLAGS :=
-    SRC_DEFS :=
-    SRC_INCDIRS :=
+    SOURCES       :=
+    SRC_CFLAGS    :=
+    SRC_CXXFLAGS  :=
+    SRC_DEFS      :=
+    SRC_INCDIRS   :=
 
-    SUBMAKEFILES :=
+    SUBMAKEFILES  :=
 
     # A directory stack is maintained so that the correct paths are used as we
     # recursively include all submakefiles. Get the makefile's directory and
@@ -181,7 +185,11 @@ define INCLUDE_SUBMAKEFILE
         # makefile apply to this new target. Initialize the target's variables.
         TGT := $$(strip $${TARGET})
         ALL_TGTS += $${TGT}
+        $${TGT}_CFLAGS    := $${TGT_CFLAGS}
+        $${TGT}_CXXFLAGS  := $${TGT_CXXFLAGS}
+        $${TGT}_DEFS      := $${TGT_DEFS}
         $${TGT}_DEPS      :=
+        $${TGT}_INCDIRS   := $${TGT_INCDIRS}
         $${TGT}_LDFLAGS   := $${TGT_LDFLAGS}
         $${TGT}_LDLIBS    := $${TGT_LDLIBS}
         $${TGT}_LINKER    := $${TGT_LINKER}
@@ -194,6 +202,10 @@ define INCLUDE_SUBMAKEFILE
         # The values defined by this makefile apply to the the "current" target
         # as determined by which target is at the top of the stack.
         TGT := $$(strip $$(call PEEK,$${TGT_STACK}))
+        $${TGT}_CFLAGS    += $${TGT_CFLAGS}
+        $${TGT}_CXXFLAGS  += $${TGT_CXXFLAGS}
+        $${TGT}_DEFS      += $${TGT_DEFS}
+        $${TGT}_INCDIRS   += $${TGT_INCDIRS}
         $${TGT}_LDFLAGS   += $${TGT_LDFLAGS}
         $${TGT}_LDLIBS    += $${TGT_LDLIBS}
         $${TGT}_POSTCLEAN += $${TGT_POSTCLEAN}
@@ -231,10 +243,11 @@ define INCLUDE_SUBMAKEFILE
         # variables that were defined.
         $${TGT}_OBJS += $${OBJS}
         $${TGT}_DEPS += $${OBJS:%.o=%.P}
-        $${OBJS}: SRC_CFLAGS := $${SRC_CFLAGS}
-        $${OBJS}: SRC_CXXFLAGS := $${SRC_CXXFLAGS}
-        $${OBJS}: SRC_DEFS := $$(addprefix -D,$${SRC_DEFS})
-        $${OBJS}: SRC_INCDIRS := $$(addprefix -I,$${SRC_INCDIRS})
+        $${OBJS}: SRC_CFLAGS   := $${$${TGT}_CFLAGS} $${SRC_CFLAGS}
+        $${OBJS}: SRC_CXXFLAGS := $${$${TGT}_CXXFLAGS} $${SRC_CXXFLAGS}
+        $${OBJS}: SRC_DEFS     := $$(addprefix -D,$${$${TGT}_DEFS} $${SRC_DEFS})
+        $${OBJS}: SRC_INCDIRS  := $$(addprefix -I,\
+                                     $${$${TGT}_INCDIRS} $${SRC_INCDIRS})
     endif
 
     ifneq "$$(strip $${SUBMAKEFILES})" ""
