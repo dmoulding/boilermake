@@ -89,7 +89,7 @@ define ADD_TARGET_RULE
 
         $${TARGET_DIR}/${1}: $${${1}_OBJS} $${${1}_PREREQS}
 	    @mkdir -p $$(dir $$@)
-	    $$(strip $${${1}_LINKER} -o $$@ $${LDFLAGS} $${${1}_LDFLAGS} \
+	    $$(strip $${${1}_LINKER} -o $$@ $${LDFLAGS} $${${1}_LDFLAGS} $${LDLIBDIRS} $${${1}_LDLIBDIRS} \
 	        $${${1}_OBJS} $${LDLIBS} $${${1}_LDLIBS})
 	    $${${1}_POSTMAKE}
     endif
@@ -145,6 +145,7 @@ define INCLUDE_SUBMAKEFILE
     TGT_INCDIRS   :=
     TGT_LDFLAGS   :=
     TGT_LDLIBS    :=
+    TGT_LDLIBDIRS :=
     TGT_LINKER    :=
     TGT_POSTCLEAN :=
     TGT_POSTMAKE  :=
@@ -185,6 +186,8 @@ define INCLUDE_SUBMAKEFILE
         # makefile apply to this new target. Initialize the target's variables.
         TGT := $$(strip $${TARGET})
         ALL_TGTS += $${TGT}
+        $${TGT}_LDLIBDIRS := $$(call QUALIFY_PATH,$${DIR},$${TGT_LDLIBDIRS})
+        $${TGT}_LDLIBDIRS := $$(call CANONICAL_PATH,$${$${TGT}_LDLIBDIRS})
         $${TGT}_CFLAGS    := $${TGT_CFLAGS}
         $${TGT}_CXXFLAGS  := $${TGT_CXXFLAGS}
         $${TGT}_DEFS      := $${TGT_DEFS}
@@ -198,10 +201,14 @@ define INCLUDE_SUBMAKEFILE
         $${TGT}_POSTMAKE  := $${TGT_POSTMAKE}
         $${TGT}_PREREQS   := $$(addprefix $${TARGET_DIR}/,$${TGT_PREREQS})
         $${TGT}_SOURCES   :=
+        $${TGT}_LDLIBDIRS := $$(addprefix -L,\
+                              $${$${TGT}_LDLIBDIRS})
     else
         # The values defined by this makefile apply to the the "current" target
         # as determined by which target is at the top of the stack.
         TGT := $$(strip $$(call PEEK,$${TGT_STACK}))
+        $${TGT}_LDLIBDIRS := $$(call QUALIFY_PATH,$${DIR},$${TGT_LDLIBDIRS})
+        $${TGT}_LDLIBDIRS := $$(call CANONICAL_PATH,$${{$$TGT}_LDLIBDIRS})
         $${TGT}_CFLAGS    += $${TGT_CFLAGS}
         $${TGT}_CXXFLAGS  += $${TGT_CXXFLAGS}
         $${TGT}_DEFS      += $${TGT_DEFS}
@@ -211,6 +218,8 @@ define INCLUDE_SUBMAKEFILE
         $${TGT}_POSTCLEAN += $${TGT_POSTCLEAN}
         $${TGT}_POSTMAKE  += $${TGT_POSTMAKE}
         $${TGT}_PREREQS   += $${TGT_PREREQS}
+        $${TGT}_LDLIBDIRS := $$(addprefix -L,\
+                              $${$${TGT}_LDLIBDIRS})
     endif
 
     # Push the current target onto the target stack.
@@ -330,6 +339,7 @@ ALL_TGTS :=
 DEFS :=
 DIR_STACK :=
 INCDIRS :=
+LDLIBDIRS :=
 TGT_STACK :=
 
 # Include the main user-supplied submakefile. This also recursively includes
@@ -339,6 +349,7 @@ $(eval $(call INCLUDE_SUBMAKEFILE,main.mk))
 # Perform post-processing on global variables as needed.
 DEFS := $(addprefix -D,${DEFS})
 INCDIRS := $(addprefix -I,$(call CANONICAL_PATH,${INCDIRS}))
+LDLIBDIRS := $(addprefix -L,$(call CANONICAL_PATH,${LDLIBDIRS}))
 
 # Define the "all" target (which simply builds all user-defined targets) as the
 # default goal.
