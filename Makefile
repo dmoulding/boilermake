@@ -149,6 +149,7 @@ define INCLUDE_SUBMAKEFILE
     TGT_POSTCLEAN :=
     TGT_POSTMAKE  :=
     TGT_PREREQS   :=
+    TGT_X_RULES   :=
 
     SOURCES       :=
     SRC_CFLAGS    :=
@@ -177,6 +178,9 @@ define INCLUDE_SUBMAKEFILE
         TARGET_DIR := .
     endif
 
+	# Append a custom rule
+	ALL_X_RULES += $${TGT_X_RULES}
+		
     # Determine which target this makefile's variables apply to. A stack is
     # used to keep track of which target is the "current" target as we
     # recursively include other submakefiles.
@@ -327,6 +331,7 @@ ALL_SRC_EXTS := ${C_SRC_EXTS} ${CXX_SRC_EXTS}
 
 # Initialize global variables.
 ALL_TGTS :=
+ALL_X_RULES :=
 DEFS :=
 DIR_STACK :=
 INCDIRS :=
@@ -360,6 +365,9 @@ $(foreach TGT,${ALL_TGTS},\
   $(foreach EXT,${CXX_SRC_EXTS},\
     $(eval $(call ADD_OBJECT_RULE,${BUILD_DIR}/$(call CANONICAL_PATH,${TGT}),\
              ${EXT},$${COMPILE_CXX_CMDS}))))
+
+# Add user-defined rule(s).
+$(foreach RULE,${ALL_X_RULES},$(eval $(call ${RULE})))
 
 # Add "clean" rules to remove all build-generated files.
 .PHONY: clean
