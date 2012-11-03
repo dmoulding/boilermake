@@ -331,6 +331,7 @@ DEFS :=
 DIR_STACK :=
 INCDIRS :=
 TGT_STACK :=
+EXTRA_RULES :=
 
 # Include the main user-supplied submakefile. This also recursively includes
 # all other user-supplied submakefiles.
@@ -369,3 +370,6 @@ $(foreach TGT,${ALL_TGTS},\
 # Include generated rules that define additional (header) dependencies.
 $(foreach TGT,${ALL_TGTS},\
   $(eval -include ${${TGT}_DEPS}))
+
+# Add user-defined rule(s).
+$(foreach RULE,${EXTRA_RULES},$(eval $(call ${RULE})))
