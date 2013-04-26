@@ -189,6 +189,8 @@ define INCLUDE_SUBMAKEFILE
         $${TGT}_CXXFLAGS  := $${TGT_CXXFLAGS}
         $${TGT}_DEFS      := $${TGT_DEFS}
         $${TGT}_DEPS      :=
+        TGT_INCDIRS       := $$(call QUALIFY_PATH,$${DIR},$${TGT_INCDIRS})
+        TGT_INCDIRS       := $$(call CANONICAL_PATH,$${TGT_INCDIRS})
         $${TGT}_INCDIRS   := $${TGT_INCDIRS}
         $${TGT}_LDFLAGS   := $${TGT_LDFLAGS}
         $${TGT}_LDLIBS    := $${TGT_LDLIBS}
@@ -205,6 +207,8 @@ define INCLUDE_SUBMAKEFILE
         $${TGT}_CFLAGS    += $${TGT_CFLAGS}
         $${TGT}_CXXFLAGS  += $${TGT_CXXFLAGS}
         $${TGT}_DEFS      += $${TGT_DEFS}
+        TGT_INCDIRS       := $$(call QUALIFY_PATH,$${DIR},$${TGT_INCDIRS})
+        TGT_INCDIRS       := $$(call CANONICAL_PATH,$${TGT_INCDIRS})
         $${TGT}_INCDIRS   += $${TGT_INCDIRS}
         $${TGT}_LDFLAGS   += $${TGT_LDFLAGS}
         $${TGT}_LDLIBS    += $${TGT_LDLIBS}
