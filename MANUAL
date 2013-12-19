@@ -147,10 +147,20 @@ TARGET_DIR
 
    Default value: . (make's working directory; aka project root)
 
+TGT_CC
+------
+   Specifies the program to be used for compiling C sources. If this option is
+    not specified, CC is used.
+
 TGT_CFLAGS
 ----------
    Like SRC_CFLAGS, but applies to all sources belonging to the current target,
    not just sources in the current submakefile.
+
+TGT_CXX
+-------
+   Specifies the program to be used for compiling C++ sources. If this option
+    is not specified, CXX is used.
 
 TGT_CXXFLAGS
 ------------
