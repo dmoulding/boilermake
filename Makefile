@@ -139,7 +139,9 @@ define INCLUDE_SUBMAKEFILE
     # Initialize all variables that can be defined by a makefile fragment, then
     # include the specified makefile fragment.
     TARGET        :=
+    TGT_CC        :=
     TGT_CFLAGS    :=
+    TGT_CXX       :=
     TGT_CXXFLAGS  :=
     TGT_DEFS      :=
     TGT_INCDIRS   :=
@@ -185,7 +187,9 @@ define INCLUDE_SUBMAKEFILE
         # makefile apply to this new target. Initialize the target's variables.
         TGT := $$(strip $${TARGET})
         ALL_TGTS += $${TGT}
+        $${TGT}_CC        := $${TGT_CC}
         $${TGT}_CFLAGS    := $${TGT_CFLAGS}
+        $${TGT}_CXX       := $${TGT_CXX}
         $${TGT}_CXXFLAGS  := $${TGT_CXXFLAGS}
         $${TGT}_DEFS      := $${TGT_DEFS}
         $${TGT}_DEPS      :=
@@ -247,6 +251,8 @@ define INCLUDE_SUBMAKEFILE
         # variables that were defined.
         $${TGT}_OBJS += $${OBJS}
         $${TGT}_DEPS += $${OBJS:%.o=%.P}
+        $${OBJS}: CC           := $$(if $${$${TGT}_CC},$${$${TGT}_CC},$${CC})
+        $${OBJS}: CXX          := $$(if $${$${TGT}_CXX},$${$${TGT}_CXX},$${CXX})
         $${OBJS}: SRC_CFLAGS   := $${$${TGT}_CFLAGS} $${SRC_CFLAGS}
         $${OBJS}: SRC_CXXFLAGS := $${$${TGT}_CXXFLAGS} $${SRC_CXXFLAGS}
         $${OBJS}: SRC_DEFS     := $$(addprefix -D,$${$${TGT}_DEFS} $${SRC_DEFS})
