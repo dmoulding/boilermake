@@ -137,6 +137,13 @@ TARGET
    SOURCES variable or any "TGT_*" variable specified in the child makefile
    applies to the target named "bar".
 
+   EXECUTABLE_PER_SOURCE can be used as a special target.  When this value is 
+   used as the target, each file in SOURCES is assumed to be an independent
+   the sole source for a single executable using the same build settings.  
+   Targets are automatically generated using the basename of each source file.  
+   This allows a series of these executables to be constructed using a single
+   .mk file.
+
 TARGET_DIR
 ----------
    Specifies the directory in which *all* final target files will be placed.
